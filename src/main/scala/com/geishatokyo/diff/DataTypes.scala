@@ -1,4 +1,4 @@
-package sql
+package com.geishatokyo.diff
 
 import PartialFunction._
 

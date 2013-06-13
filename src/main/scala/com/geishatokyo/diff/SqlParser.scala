@@ -1,4 +1,4 @@
-package sql
+package com.geishatokyo.diff
 
 import PartialFunction._
 
@@ -68,7 +68,7 @@ trait SqlParser extends RegexParsers with DataTypes {
 
   def sum[A](list: List[Parser[A]]) = list.reduce(_ | _)
 
-  val symbol = """[\w`"]+""".r
+  val symbol = """[\w`]+""".r
 
   val string = """'[^']+'""".r
 

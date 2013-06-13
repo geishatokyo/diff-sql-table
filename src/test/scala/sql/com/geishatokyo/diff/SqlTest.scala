@@ -1,3 +1,5 @@
+import com.geishatokyo.diff
+
 import org.scalatest._
 import org.scalatest.matchers._
 
