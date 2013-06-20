@@ -20,6 +20,10 @@ case class Column(name: String, dataType: DataType, options: Set[String]) extend
 case class Primary(names: List[String]) extends Definition
 case class IndexKey(name: Option[String], columns: List[String]) extends Definition
 
+case class TableOption(key: String, value: String) {
+  override def toString = s"$key=$value"
+}
+
 object Definition {
   def columns(defs: List[Definition]) = {
     val primary = defs.collect {
@@ -34,24 +38,26 @@ object Definition {
   }
 }
 
-case class Table(name: String, columns: Set[Column], options: List[String]) {
+case class Table(name: String, columns: Set[Column], options: Set[TableOption]) {
   def alter(table: Table) = {
     val add = table.columns diff columns
     val drop = columns diff table.columns
-    if (add.isEmpty && drop.isEmpty)
+    val opts = table.options diff options
+    if (add.isEmpty && drop.isEmpty && opts.isEmpty)
       throw new RuntimeException("no difference")
     else
       s"ALTER TABLE $name " +
         (add.map("ADD " +).toList :::
           drop.map("DROP " +).toList :::
-          options).mkString(",")
+          opts.toList).mkString(",")
   }
 }
 
-trait SqlParser extends RegexParsers with DataTypes {
+trait SqlParser extends RegexParsers with DataTypes { self =>
 
   case class CaseInsensitive(string: String) {
     def re = ("(?i)" + string).r
+    def regex = self.regex(re)
   }
 
   implicit def i(s: String) = CaseInsensitive(s)
@@ -78,34 +84,16 @@ trait SqlParser extends RegexParsers with DataTypes {
 
   val binary = "0".r | "1".r
 
-  val tableOptions =
-    List[(String, Parser[String])](
-      "ENGINE" -> symbol,
-      "AUTO_INCREMENT" -> symbol,
-      "AVG_ROW_LENGTH" -> symbol,
-      """(DEFAULT)\s+CHARACTER\s+SET""" -> symbol,
-      """(DEFAULT)\s+CHARSET""" -> symbol,
-      "CHECKSUM" -> binary,
-      "COLLATE" -> symbol,
-      "COMMENT" -> string,
-      "CONNECTION" -> string,
-      """DATA\s+DIRECTORY""" -> string,
-      "DELAY_KEY_WRITE" -> binary,
-      "INDEX DIRECTORY" -> string,
-      "INSERT_METHOD" -> ("NO".re | "FIRST".re | "LAST".re),
-      "KEY_BLOCK_SIZE" -> symbol,
-      "MAX_ROWS" -> symbol,
-      "MIN_ROWS" -> symbol,
-      "PACK_KEYS" -> (binary | "DEFAULT".re),
-      "PASSWORD" -> string,
-      "ROW_FORMAT" -> ("DEFAULT".re | "DYNAMIC".re | "FIXED".re | "COMPRESSED".re | "REDUNDANT".re | "COMPACT".re),
-      "UNION" -> (repsep(symbol, ",".r) ^^ (_.mkString(",")))
+  val tableOptions: List[(Parser[String], Regex)] =
+    List(
+      "ENGINE".regex -> symbol,
+      opts("DEFAULT".re) ~~ ("CHARACTER".re ~~ "SET".re | "CHARSET".re) -> symbol
     )
 
   val tableOption =
     sum(tableOptions. map {
-      case (key, value) => key.re ~ opt("=") ~ value ^^ {
-        case key ~ equal ~ value => key + equal.getOrElse(" ") + value
+      case (key, value) => key ~ opt("=") ~ value ^^ {
+        case key ~ equal ~ value => TableOption(key.toUpperCase, value)
       }
     })
 
@@ -135,7 +123,7 @@ trait SqlParser extends RegexParsers with DataTypes {
 
   val createTableStatement = createTable ~ appl(repsep(createDinition, ",".r)) ~ rep(tableOption) <~ opt(";".r) ^^ {
     case name ~ defs ~ opts =>
-      Table(name, ListSet(Definition.columns(defs): _*), opts)
+      Table(name, ListSet(Definition.columns(defs): _*), ListSet(opts: _*))
   }
 
   def parseSql(s: String) = Try(parseAll(createTableStatement, s).get)
