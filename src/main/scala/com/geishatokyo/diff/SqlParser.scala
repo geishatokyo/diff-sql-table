@@ -5,11 +5,13 @@ import PartialFunction._
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 
+import scala.util.Try
+
 import scala.collection.immutable.ListSet
 
 sealed trait Definition
 case class Column(name: String, dataType: DataType, options: Set[String]) extends Definition {
-  override def toString = name + " " + dataType
+  override def toString = s"""$name $dataType ${options.mkString(" ")}"""
   override def equals(a: Any) = cond(this -> a) {
     case (a: Column, b: Column) =>
       a.name == b.name && a.dataType == b.dataType
@@ -20,27 +22,29 @@ case class IndexKey(name: Option[String], columns: List[String]) extends Definit
 
 object Definition {
   def columns(defs: List[Definition]) = {
-    val cols = defs collect {
-      case c: Column => c
-    }
     val primary = defs.collect {
       case p: Primary => p.names
     }.flatten.toSet
-    cols.map(c =>
-      if (primary(c.name))
-        c.copy(options = c.options + "PRIMARY KEY")
-      else
-        c
-    )
+    defs collect {
+      case c: Column => c
+    } map {
+      case c if primary(c.name) => c.copy(options = c.options + "PRIMARY KEY")
+      case c => c
+    }
   }
 }
 
 case class Table(name: String, columns: Set[Column], options: List[String]) {
   def alter(table: Table) = {
-    s"ALTER TABLE $name " +
-    ((table.columns diff columns).map("ADD " +).toList :::
-    (columns diff table.columns).map("DROP " +).toList :::
-    options).mkString(",")
+    val add = table.columns diff columns
+    val drop = columns diff table.columns
+    if (add.isEmpty && drop.isEmpty)
+      throw new RuntimeException("no difference")
+    else
+      s"ALTER TABLE $name " +
+        (add.map("ADD " +).toList :::
+          drop.map("DROP " +).toList :::
+          options).mkString(",")
   }
 }
 
@@ -134,15 +138,13 @@ trait SqlParser extends RegexParsers with DataTypes {
       Table(name, ListSet(Definition.columns(defs): _*), opts)
   }
 
-  def parseSql(s: String) = parseAll(createTableStatement, s)
+  def parseSql(s: String) = Try(parseAll(createTableStatement, s).get)
 
-  def diff(a: String, b: String): String =
-    (parseSql(a), parseSql(b)) match {
-      case (Success(a, _), Success(b, _)) => a alter b
-      case (a: NoSuccess, b: NoSuccess) => a + "\n" + b
-      case (a: NoSuccess, _) => a.toString
-      case (_, b: NoSuccess) => b.toString
-    }
+  def diff(before: String, after: String) = for {
+    x <- parseSql(before)
+    y <- parseSql(after)
+    z <- Try(x alter y)
+  } yield z
 
   def diffOp(a: String, b: String) = diff(b, a)
 
