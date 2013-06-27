@@ -10,7 +10,7 @@ import scala.util.Try
 import scala.collection.immutable.ListSet
 
 sealed trait Definition
-case class Column(name: String, dataType: DataType, options: Set[String]) extends Definition {
+case class Column(name: String, dataType: DataType, options: Set[ColumnOptions.Result]) extends Definition {
   override def toString = s"""$name $dataType ${options.mkString(" ")}"""
   override def equals(a: Any) = cond(this -> a) {
     case (a: Column, b: Column) =>
@@ -21,10 +21,6 @@ case class Primary(names: List[String]) extends Definition
 case class UniqueKey(name: Option[String], columns: List[String]) extends Definition
 case class IndexKey(name: Option[String], columns: List[String]) extends Definition
 
-case class TableOption(key: String, value: String) {
-  override def toString = s"$key=$value"
-}
-
 object Definition {
   def columns(defs: List[Definition]) = {
     val primary = defs.collect {
@@ -33,13 +29,13 @@ object Definition {
     defs collect {
       case c: Column => c
     } map {
-      case c if primary(c.name) => c.copy(options = c.options + "PRIMARY KEY")
+//      case c if primary(c.name) => c.copy(options = c.options + "PRIMARY KEY")
       case c => c
     }
   }
 }
 
-case class Table(name: String, columns: Set[Column], options: Set[TableOption]) {
+case class Table(name: String, columns: Set[Column], options: Set[TableOptions.Result]) {
   def alter(table: Table) = {
     val add = table.columns diff columns
     val drop = columns diff table.columns
@@ -54,10 +50,11 @@ case class Table(name: String, columns: Set[Column], options: Set[TableOption]) 
   }
 }
 
-trait SqlParser extends RegexParsers with DataTypes { self =>
+trait SqlParser extends RegexParsers with DataTypes with TableOptions with ColumnOptions { self =>
 
   case class CaseInsensitive(string: String) {
     def re = ("(?i)" + string).r
+    def i = ("(?i)" + string).r
   }
 
   implicit def i(s: String) = CaseInsensitive(s)
@@ -80,37 +77,24 @@ trait SqlParser extends RegexParsers with DataTypes { self =>
 
   val symbol = """[\w`]+""".r
 
+  val value = """[\w`]+""".r
+
   val string = """'[^']+'""".r
 
   val binary = "0".r | "1".r
 
-  val tableOptions: List[(Parser[String], Regex)] =
-    List(
-      regex("ENGINE".re) -> symbol,
-      opts("DEFAULT".re) ~~ ("CHARACTER".re ~~ "SET".re | "CHARSET".re) -> symbol,
-      regex("AUTO_INCREMENT".re) -> symbol
-    )
-
   val tableOption =
-    sum(tableOptions. map {
-      case (key, value) => key ~ opt("=") ~ value ^^ {
-        case key ~ equal ~ value => TableOption(key.toUpperCase, value)
-      }
-    })
+    TableOption.Engine | TableOption.Charset | TableOption.AutoIncrement
 
-  val columnOptions: List[Parser[String]] =
-    List(
-      """NOT\s+NULL""".re,
-      "NULL".re,
-      """DEFAULT""".re ~~ string,
-      "AUTO_INCREMENT".re,
-      "UNIQUE".re ~~ opts("KEY".re),
-      opts("PRIMARY".re) ~~ "KEY".re,
-      """CHARACTER\s+SET\s+\w+""".re
-    )
+  val columnOptions =
+    ColumnOption.NotNull |
+    ColumnOption.Null |
+    ColumnOption.PrimaryKey |
+    ColumnOption.UniqueKey |
+    ColumnOption.AutoIncrement
 
   val columnDefinition =
-    symbol ~ dataType ~ rep(sum(columnOptions)) ^^ {
+    symbol ~ dataType ~ rep(columnOptions) ^^ {
       case name ~ typ ~ opts => Column(name.toLowerCase, typ, ListSet(opts:_*))
     }
 
@@ -146,3 +130,9 @@ trait SqlParser extends RegexParsers with DataTypes { self =>
 }
 
 object SqlParser extends SqlParser
+
+trait Options {
+  abstract class Value(show: String) {
+    override def toString = show
+  }
+}
