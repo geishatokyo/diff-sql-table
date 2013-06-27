@@ -18,6 +18,7 @@ case class Column(name: String, dataType: DataType, options: Set[String]) extend
   }
 }
 case class Primary(names: List[String]) extends Definition
+case class UniqueKey(name: Option[String], columns: List[String]) extends Definition
 case class IndexKey(name: Option[String], columns: List[String]) extends Definition
 
 case class TableOption(key: String, value: String) {
@@ -57,7 +58,6 @@ trait SqlParser extends RegexParsers with DataTypes { self =>
 
   case class CaseInsensitive(string: String) {
     def re = ("(?i)" + string).r
-    def regex = self.regex(re)
   }
 
   implicit def i(s: String) = CaseInsensitive(s)
@@ -86,8 +86,9 @@ trait SqlParser extends RegexParsers with DataTypes { self =>
 
   val tableOptions: List[(Parser[String], Regex)] =
     List(
-      "ENGINE".regex -> symbol,
-      opts("DEFAULT".re) ~~ ("CHARACTER".re ~~ "SET".re | "CHARSET".re) -> symbol
+      regex("ENGINE".re) -> symbol,
+      opts("DEFAULT".re) ~~ ("CHARACTER".re ~~ "SET".re | "CHARSET".re) -> symbol,
+      regex("AUTO_INCREMENT".re) -> symbol
     )
 
   val tableOption =
@@ -104,7 +105,8 @@ trait SqlParser extends RegexParsers with DataTypes { self =>
       """DEFAULT""".re ~~ string,
       "AUTO_INCREMENT".re,
       "UNIQUE".re ~~ opts("KEY".re),
-      opts("PRIMARY".re) ~~ "KEY".re
+      opts("PRIMARY".re) ~~ "KEY".re,
+      """CHARACTER\s+SET\s+\w+""".re
     )
 
   val columnDefinition =
@@ -117,6 +119,9 @@ trait SqlParser extends RegexParsers with DataTypes { self =>
     """PRIMARY\s+KEY""".re ~ "(" ~> repsep(symbol, ",".r) <~ ")" ^^ Primary.apply | 
     ("KEY".re | "INDEX".re) ~> (opt(symbol) <~ "(") ~ repsep(symbol, ",".r) <~ ")" ^^ {
       case name ~ cols => IndexKey(name, cols)
+    } |
+    "UNIQUE".re ~~ "KEY".re ~> (opt(symbol) <~ "(") ~ repsep(symbol, ",".r) <~ ")" ^^ {
+      case name ~ cols => IndexKey(name, cols)
     }
 
   val createTable = "CREATE".re ~ "TABLE".re ~ opt("""IF\s+NOT\s+EXISTS""".re) ~> symbol
@@ -126,11 +131,13 @@ trait SqlParser extends RegexParsers with DataTypes { self =>
       Table(name, ListSet(Definition.columns(defs): _*), ListSet(opts: _*))
   }
 
-  def parseSql(s: String) = Try(parseAll(createTableStatement, s).get)
+  def parseSql(s: String) = parseAll(createTableStatement, s)
+
+  def tryParse(s: String) = Try(parseSql(s).get)
 
   def diff(before: String, after: String) = for {
-    x <- parseSql(before)
-    y <- parseSql(after)
+    x <- tryParse(before)
+    y <- tryParse(after)
     z <- Try(x alter y)
   } yield z
 

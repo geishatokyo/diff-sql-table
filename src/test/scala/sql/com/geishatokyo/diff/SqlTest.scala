@@ -34,9 +34,32 @@ class ParserSpec extends FlatSpec with ShouldMatchers {
 
   val fake = Fake.ddl.createStatements.mkString
 
+  val sample1 = """CREATE TABLE `musicinfo` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `musicHash` varchar(100) CHARACTER SET utf8mb4 NOT NULL,
+  `title` varchar(100) CHARACTER SET utf8mb4 NOT NULL,
+  `artist` varchar(100) CHARACTER SET utf8mb4 NOT NULL,
+  `duration` double NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `KEY_MusicInfo_musicHash` (`musicHash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8"""
+
+  val sample2 = """CREATE TABLE `friendlink` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `ownerId` bigint(20) NOT NULL,
+  `friendId` bigint(20) NOT NULL,
+  `status` int(11) NOT NULL,
+  `friendship` int(11) NOT NULL,
+  `updated` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8
+"""
+
   "parser" should "succeed in parsing sql" in {
-    assert(SqlParser.parseSql(slick).isSuccess)
-    assert(SqlParser.parseSql(mysql).isSuccess)
+    assert(SqlParser.parseSql(slick).successful, slick)
+    assert(SqlParser.parseSql(mysql).successful, mysql)
+    assert(SqlParser.parseSql(sample1).successful, SqlParser.parseSql(sample1))
+    assert(SqlParser.parseSql(sample2).successful, SqlParser.parseSql(sample2))
   }
 
   "difference of two sqls" should "be only option" in {
