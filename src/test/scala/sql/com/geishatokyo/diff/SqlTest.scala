@@ -58,22 +58,22 @@ class ParserSpec extends FlatSpec with ShouldMatchers {
   "parser" should "succeed in parsing sql" in {
     assert(SqlParser.parseSql(slick).successful, slick)
     assert(SqlParser.parseSql(mysql).successful, mysql)
-    assert(SqlParser.parseSql(sample1).successful, SqlParser.parseSql(sample1))
-    assert(SqlParser.parseSql(sample2).successful, SqlParser.parseSql(sample2))
+    assert(SqlParser.parseSql(sample1).successful,sample1)
+    assert(SqlParser.parseSql(sample2).successful, sample2)
   }
 
   "difference of two sqls" should "be only option" in {
     val result = SqlParser.diff(slick, mysql)
-    assert(result.isSuccess)
-    assert(!result.get.contains("ADD"))
-    assert(!result.get.contains("DROP"))
+    assert(result.isSuccess, result)
+    assert(!result.get.contains("ADD"), result)
+    assert(!result.get.contains("DROP"), result)
   }
 
   "difference of sql" should "be name and supid" in {
     val result = SqlParser.diff(slick, fake)
-    assert(result.isSuccess)
-    assert("ADD".r.findAllMatchIn(result.get).size === 2)
-    assert("DROP".r.findAllMatchIn(result.get).size === 2)
+    assert(result.isSuccess, result)
+    assert("ADD".r.findAllMatchIn(result.get).size === 3, result)
+    assert("DROP".r.findAllMatchIn(result.get).size === 3, result)
   }
 
 }
