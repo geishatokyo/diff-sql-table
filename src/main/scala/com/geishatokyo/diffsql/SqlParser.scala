@@ -1,4 +1,4 @@
-package com.geishatokyo.diff
+package com.geishatokyo.diffsql
 
 import PartialFunction._
 
@@ -9,7 +9,12 @@ import scala.util.Try
 
 import scala.collection.immutable.ListSet
 
-trait SqlParser extends RegexParsers with DataTypes with TableOptions with ColumnOptions with Keys { self =>
+trait SqlParser extends RegexParsers
+    with DataTypes
+    with TableOptions
+    with ColumnOptions
+    with Keys
+{
 
   trait Definition
 
@@ -21,7 +26,11 @@ trait SqlParser extends RegexParsers with DataTypes with TableOptions with Colum
       s"""$name $dataType """ + options.mkString(" ")
   }
 
-  case class Table(name: String, columns: Set[Definition], options: Set[TableOption]) {
+  case class Table(
+    name: String,
+    columns: Set[Definition],
+    options: Set[TableOption]
+  ) {
     def alter(table: Table) = {
       val add = table.columns diff columns
       val drop = columns diff table.columns

@@ -1,4 +1,4 @@
-package com.geishatokyo.diff
+package com.geishatokyo.diffsql
 
 trait ColumnOptions { self: SqlParser =>
 

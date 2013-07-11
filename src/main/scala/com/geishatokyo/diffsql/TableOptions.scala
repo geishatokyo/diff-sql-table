@@ -1,4 +1,4 @@
-package com.geishatokyo.diff
+package com.geishatokyo.diffsql
 
 trait TableOptions { self: SqlParser =>
   sealed abstract class TableOption(key: String, parser: Parser[Any])
