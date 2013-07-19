@@ -1,13 +1,33 @@
 package com.geishatokyo.diffsql
 
-import PartialFunction._
-
-import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
-
 import scala.util.Try
 
-import scala.collection.immutable.ListSet
+trait Definition
+
+case class Column
+  (name: String, dataType: DataType)
+  (val options: Set[ColumnOption])
+    extends Definition {
+  override def toString =
+    s"""$name $dataType """ + options.mkString(" ")
+}
+
+case class Table(
+  name: String,
+  columns: Set[Definition],
+  options: Set[TableOption]
+) {
+  def alter(table: Table) = {
+    val add = table.columns diff columns map ("ADD " +)
+    val drop = columns diff table.columns map ("DROP " +)
+    val opts = table.options diff options
+    if (add.isEmpty && drop.isEmpty && opts.isEmpty)
+      None
+    else
+      Some(s"ALTER TABLE $name " + (add ++ drop ++ opts).mkString(","))
+  }
+}
 
 trait SqlParser extends RegexParsers
     with DataTypes
@@ -16,67 +36,32 @@ trait SqlParser extends RegexParsers
     with Keys
 {
 
-  trait Definition
-
-  case class Column(
-    name: String,
-    dataType: DataType
-  )(val options: Set[ColumnOption]) extends Definition {
-    override def toString =
-      s"""$name $dataType """ + options.mkString(" ")
-  }
-
-  case class Table(
-    name: String,
-    columns: Set[Definition],
-    options: Set[TableOption]
-  ) {
-    def alter(table: Table) = {
-      val add = table.columns diff columns
-      val drop = columns diff table.columns
-      val opts = table.options diff options
-      if (add.isEmpty && drop.isEmpty && opts.isEmpty)
-        throw new RuntimeException("no difference")
-      else
-        s"ALTER TABLE $name " +
-          (add.map("ADD " +).toList :::
-            drop.map("DROP " +).toList :::
-            opts.toList).mkString(",")
-    }
-  }
-
-  case class CaseInsensitive(string: String) {
+  implicit class CaseInsensitive(string: String) {
     def i = ("(?i)" + string).r
   }
-
-  implicit def i(s: String) = CaseInsensitive(s)
 
   def Apply[A](p: Parser[A]) = """\(""".r ~> p <~ """\)""".r
 
   val value = """[\w`]+""".r
 
-  val tableOption =
-    TableOption.Engine | TableOption.Charset | TableOption.AutoIncrement
+  val tableOption = { import TableOption._
+    Engine | Charset | AutoIncrement
+  }
 
-  val columnOption =
-    NotNull |
-    Null |
-    PrimaryKey |
-    UniqueKey |
-    AutoIncrement
+  val columnOption = { import ColumnOption._
+    NotNull | Null | PrimaryKey | UniqueKey | AutoIncrement
+  }
 
   val columnDefinition = value ~ dataType ~ rep(columnOption) ^^ {
     case name ~ typ ~ opts =>
-      Column(name.toLowerCase, typ)(ListSet(opts:_*))
+      Column(name.toLowerCase, typ)(Set(opts:_*))
   }
 
-  val createDinition =
-    columnDefinition |
-    Key.Primary |
-    Key.Unique |
-    Key.Index
+  val createDinition = { import Key._
+    columnDefinition | Primary | Unique | Index
+  }
 
-  val dataType =
+  val dataType = { import DataType._
     Bit | TinyInt | SmallInt | MediumInt | Integer | Int | BigInt |
     Binary | VarBinary |
     Char | VarChar |
@@ -85,14 +70,16 @@ trait SqlParser extends RegexParsers
     TinyText | Text | MediumText | LongText |
     DateTime | Date | TimeStamp | Time | Year |
     TinyBlob | Blob | MediumBlob | LongBlob
+  }
 
-  def columns(defs: Set[Definition]) = defs.flatMap {
-    case c: Column =>  c.options.collect {
-      case PrimaryKey =>
-        Key.Primary.Result(None, List(c.name)): Definition
-      case UniqueKey =>
-        Key.Unique.Result(None, List(c.name))
-    } + c
+  def expand(defs: Set[Definition]) = defs.flatMap {
+    case c: Column => import ColumnOption._, Key._
+      c.options.collect {
+        case PrimaryKey.Value =>
+          Primary.Value(None, List(c.name)): Definition
+        case UniqueKey.Value =>
+          Unique.Value(None, List(c.name)): Definition
+      } + c
     case x => Set(x)
   }
 
@@ -101,18 +88,16 @@ trait SqlParser extends RegexParsers
     value ~ Apply(repsep(createDinition, ",".r)) ~
     rep(tableOption) <~ opt(";".r) ^^ {
       case name ~ defs ~ opts =>
-        Table(name, columns(ListSet(defs: _*)), ListSet(opts: _*))
+        Table(name, expand(Set(defs: _*)), Set(opts: _*))
     }
 
   def parseSql(s: String) = parseAll(createTableStatement, s)
 
-  def tryParse(s: String) = Try(parseSql(s).get)
-
   def diff(before: String, after: String) = for {
-    x <- tryParse(before)
-    y <- tryParse(after)
-    z <- Try(x alter y)
-  } yield z
+    before <- Try(parseSql(before).get)
+    after <- Try(parseSql(after).get)
+    sql <- Try(before alter after get)
+  } yield sql
 
 }
 
