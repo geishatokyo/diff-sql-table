@@ -16,25 +16,30 @@ case class Column
 case class Table(
   name: String,
   columns: Set[Definition],
-  options: Set[TableOption]
-) {
+  options: Set[TableOption]) {
   def alter(table: Table) = {
-    val add = table.columns diff columns map ("ADD " +)
-    val drop = columns diff table.columns map ("DROP " +)
-    val opts = table.options diff options
-    if (add.isEmpty && drop.isEmpty && opts.isEmpty)
-      None
-    else
-      Some(s"ALTER TABLE $name " + (add ++ drop ++ opts).mkString(","))
+    Diff(name
+      , table.columns diff columns
+      , columns diff table.columns
+      , table.options diff options)
   }
+}
+
+case class Diff(
+  name: String,
+  add: Set[Definition],
+  drop: Set[Definition],
+  options: Set[TableOption]) {
+  override def toString =
+    s"ALTER TABLE $name " +
+      (add.map("ADD " +) ++ drop.map("DROP " +) ++ options).mkString(",")
 }
 
 trait SqlParser extends RegexParsers
     with DataTypes
     with TableOptions
     with ColumnOptions
-    with Keys
-{
+    with Keys {
 
   implicit class CaseInsensitive(string: String) {
     def i = ("(?i)" + string).r
@@ -96,7 +101,7 @@ trait SqlParser extends RegexParsers
   def diff(before: String, after: String) = for {
     before <- Try(parseSql(before).get)
     after <- Try(parseSql(after).get)
-    sql <- Try(before alter after get)
+    sql <- Try(before alter after)
   } yield sql
 
 }

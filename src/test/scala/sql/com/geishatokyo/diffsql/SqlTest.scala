@@ -60,15 +60,18 @@ no BLOB
   "difference of sqls" should "be only option" in {
     val result = SqlParser.diff(slick, mysql)
     assert(result.isSuccess, result)
-    assert(!result.get.contains("ADD"), result)
-    assert(!result.get.contains("DROP"), result)
+    assert(result.get.add.isEmpty, result)
+    assert(result.get.drop.isEmpty, result)
+    import SqlParser.TableOption._
+    assert(result.get.options.contains(Engine.Value("InnoDB")), result)
+    assert(result.get.options.contains(Charset.Value("latin1")), result)
   }
 
   "difference of sqls" should "be name and supid" in {
     val result = SqlParser.diff(slick, fake)
     assert(result.isSuccess, result)
-    assert("ADD".r.findAllMatchIn(result.get).size === 3, result)
-    assert("DROP".r.findAllMatchIn(result.get).size === 3, result)
+    assert(result.get.add.size === 3, result)
+    assert(result.get.drop.size === 3, result)
   }
 
 }

@@ -63,7 +63,7 @@ class SlickSchemifier(db : Database) {
 
           log("Alter talbe " + t.tableName)
 
-          Q.query[Unit,String](diff.get).execute()
+          Q.query[Unit,String](diff.get.toString).execute()
 
         }
 
