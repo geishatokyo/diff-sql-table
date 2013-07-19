@@ -8,9 +8,10 @@ trait TableOptions { self: SqlParser =>
 
     sealed abstract class Parser(key: String, parser: self.Parser[Any])
         extends self.Parser[TableOption] {
-      case class Value(value: String) extends TableOption {
+      case class Value(key: String, value: String) extends TableOption {
         override def toString = s"$key=$value"
       }
+      object Value { def apply(value: String): Value = Value(key, value) }
       def this(key: String) = this(key, key.i)
       def apply(in: Input) =
         parse(parser ~ opt("=") ~> value ^^ Value.apply, in)

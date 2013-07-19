@@ -74,6 +74,16 @@ no BLOB
     assert(result.get.drop.size === 3, result)
   }
 
+  "ast" should "have equivalence" in {
+    import SqlParser._
+    assert(TableOption.Engine.Value("a") === TableOption.Engine.Value("a"))
+    assert(TableOption.Engine.Value("a") != TableOption.Engine.Value("b"))
+    assert(TableOption.Engine.Value("a") != TableOption.Charset.Value("a"))
+    assert(Key.Primary.Value() === Key.Primary.Value())
+    assert(Key.Primary.Value(Some("a")) != Key.Primary.Value())
+    assert(Key.Primary.Value(Some("a")) != Key.Unique.Value(Some("a")))
+  }
+
 }
 
 trait Samples {

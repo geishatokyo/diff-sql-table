@@ -8,10 +8,19 @@ trait Keys { self: SqlParser =>
 
     abstract class Parser(key: String, parser: self.Parser[Any])
         extends self.Parser[Key] {
-      case class Value(name: Option[String], columns: List[String])
+      case class Value(
+        key: String,
+        name: Option[String],
+        columns: List[String])
           extends Key {
         override def toString =
           s"""$key ${name getOrElse ""} ${columns mkString " "}"""
+      }
+      object Value {
+        def apply(
+          name: Option[String] = None,
+          columns: List[String] = Nil)
+            : Value = Value(key, name, columns)
       }
       def apply(in: Input) =
         parse(parser ~> opt(value) ~ Apply(repsep(value, ",".r)) ^^ {
