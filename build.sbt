@@ -1,3 +1,9 @@
+name := "diff-sql-table"
+
+organization := "com.geishatokyo.tools"
+
+version := "0.1-SNAPSHOT"
+
 scalaVersion := "2.10.0"
 
 libraryDependencies ++= Seq(
