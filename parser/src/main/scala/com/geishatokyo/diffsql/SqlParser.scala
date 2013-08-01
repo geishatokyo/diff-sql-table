@@ -17,12 +17,11 @@ case class Table(
   name: String,
   columns: Set[Definition],
   options: Set[TableOption]) {
-  def alter(table: Table) = {
+  def alter(table: Table) =
     Diff(name
       , table.columns diff columns
       , columns diff table.columns
       , table.options diff options)
-  }
 }
 
 case class Diff(
@@ -30,9 +29,14 @@ case class Diff(
   add: Set[Definition],
   drop: Set[Definition],
   options: Set[TableOption]) {
-  override def toString =
+  val modify = add & drop
+  override def toString = {
+    val ADD = (add diff modify).map("ADD " +)
+    val DROP = (drop diff modify).map("DROP " +)
+    val MODIFY = modify.map("MODIFY " +)
     s"ALTER TABLE $name " +
-      (add.map("ADD " +) ++ drop.map("DROP " +) ++ options).mkString(",")
+      (ADD ++ DROP ++ MODIFY ++ options).mkString(",")
+  }
 }
 
 trait SqlParser extends RegexParsers

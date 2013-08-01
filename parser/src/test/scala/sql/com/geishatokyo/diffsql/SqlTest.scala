@@ -84,6 +84,21 @@ no BLOB
     assert(Key.Primary.Value(Some("a")) != Key.Unique.Value(Some("a")))
   }
 
+  "primary key and unique key" should "be abstracted from sql" in {
+    val coffee1 = """CREATE TABLE `coffees` (
+  `COF_NAME` varchar(254) NOT NULL,
+  `SUP_ID` int(11) NOT NULL,
+  PRIMARY KEY (`COF_NAME`),
+  UNIQUE KEY (`SUP_ID`)
+)"""
+    val coffee2 = """CREATE TABLE `coffees` (
+  `COF_NAME` varchar(254) NOT NULL PRIMARY KEY,
+  `SUP_ID` int(11) NOT NULL UNIQUE KEY
+)"""
+    val result = SqlParser.diff(coffee1, coffee2)
+    assert(result.isSuccess, result)
+  }
+
 }
 
 trait Samples {
