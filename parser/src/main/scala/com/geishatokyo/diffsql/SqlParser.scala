@@ -16,23 +16,17 @@ case class Column
 case class Table(
   name: String,
   columns: Set[Definition],
-  options: Set[TableOption]) {
-  def alter(table: Table) =
-    Diff(name
-      , table.columns diff columns
-      , columns diff table.columns
-      , table.options diff options)
-}
+  options: Set[TableOption])
 
 case class Diff(
   name: String,
   add: Set[Definition],
-  drop: Set[Definition],
+  drop: Set[String],
+  modify: Set[Column],
   options: Set[TableOption]) {
-  val modify = add & drop
   override def toString = {
-    val ADD = (add diff modify).map("ADD " +)
-    val DROP = (drop diff modify).map("DROP " +)
+    val ADD = add.map("ADD " +)
+    val DROP = drop.map("DROP " +)
     val MODIFY = modify.map("MODIFY " +)
     s"ALTER TABLE $name " +
       (ADD ++ DROP ++ MODIFY ++ options).mkString(",")
@@ -102,15 +96,40 @@ trait SqlParser extends RegexParsers
 
   def parseSql(s: String) = parseAll(createTableStatement, s)
 
-  def diff(before: String, after: String) = for {
+  def diff(before: Table, after: Table): Diff
+
+  def diff(before: String, after: String): Try[Diff] = for {
     before <- Try(parseSql(before).get)
     after <- Try(parseSql(after).get)
-    sql <- Try(before alter after)
+    sql <- Try(diff(before, after))
   } yield sql
 
 }
 
-object SqlParser extends SqlParser with LaxEqualizer
+object SqlParser extends SqlParser with Differ with LaxEqualizer
+
+trait Differ { self: SqlParser =>
+  def diff(before: Table, after: Table) = {
+    val changes =
+    before.columns.collect {
+      case b: Column => after.columns.collect {
+        case a: Column if a.name == b.name && a.dataType != b.dataType => b
+      }
+    }.flatten
+    def remove(defs: Set[Definition]) =
+    defs filter {
+      case c: Column => !changes.map(_.name).contains(c.name)
+      case _ => true
+    }
+    Diff(before.name,
+      remove(before.columns diff after.columns),
+      remove(after.columns diff before.columns).collect {
+        case c: Column => c.name
+      },
+      changes,
+      before.options diff after.options)
+  }
+}
 
 trait LaxEqualizer { self: SqlParser =>
   def equal(x: DataType, y: DataType) = x.hashCode == y.hashCode

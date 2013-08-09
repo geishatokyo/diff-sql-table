@@ -1,4 +1,4 @@
-import com.geishatokyo.diffsql
+package com.geishatokyo.diffsql.test
 
 import com.geishatokyo.diffsql.SqlParser
 
@@ -6,20 +6,6 @@ import org.scalatest._
 import org.scalatest.matchers._
 
 import scala.slick.driver.MySQLDriver.simple._
-
-object Coffees extends Table[(String, Int, Double)]("COFFEES") {
-  def name = column[String]("COF_NAME", O.PrimaryKey)
-  def supID = column[Int]("SUP_ID")
-  def price = column[Double]("PRICE")
-  def * = name ~ supID ~ price
-}
-
-object Fake extends Table[(String, String, Float)]("COFFEES") {
-  def name = column[String]("COFNAME", O.PrimaryKey)
-  def supID = column[String]("SUP_ID")
-  def price = column[Float]("PRICE")
-  def * = name ~ supID ~ price
-}
 
 class ParserSpec extends FlatSpec with ShouldMatchers with Samples { self =>
 
@@ -58,7 +44,7 @@ no BLOB
   }
 
   "difference of sqls" should "be only option" in {
-    val result = SqlParser.diff(slick, mysql)
+    val result = SqlParser.diff(mysql, slick)
     assert(result.isSuccess, result)
     assert(result.get.add.isEmpty, (result.get.add, SqlParser.parseSql(slick), SqlParser.parseSql(mysql)))
     assert(result.get.drop.isEmpty, result.get.drop)
@@ -70,8 +56,9 @@ no BLOB
   "difference of sqls" should "be name and supid" in {
     val result = SqlParser.diff(slick, fake)
     assert(result.isSuccess, result)
-    assert(result.get.add.size === 3, result)
-    assert(result.get.drop.size === 3, result)
+    assert(result.get.add.size === 2, result)
+    assert(result.get.drop.size === 1, result)
+    assert(result.get.modify.size === 1, result)
   }
 
   "ast" should "have equivalence" in {
@@ -102,6 +89,20 @@ no BLOB
 }
 
 trait Samples {
+
+  object Coffees extends Table[(String, Int, Double)]("COFFEES") {
+    def name = column[String]("COF_NAME", O.PrimaryKey)
+    def supID = column[Int]("SUP_ID")
+    def price = column[Double]("PRICE")
+    def * = name ~ supID ~ price
+  }
+
+  object Fake extends Table[(String, String, Float)]("COFFEES") {
+    def name = column[String]("COFNAME", O.PrimaryKey)
+    def supID = column[String]("SUP_ID")
+    def price = column[Float]("PRICE")
+    def * = name ~ supID ~ price
+  }
 
   val sample1 = """CREATE TABLE `musicinfo` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
