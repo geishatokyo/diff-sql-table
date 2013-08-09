@@ -4,6 +4,14 @@ sealed trait DataType
 
 trait DataTypes { self: SqlParser =>
 
+  def equal(x: DataType, y: DataType): Boolean
+  trait Equalizer { self: DataType =>
+    override def equals(x: Any) = x match {
+      case t: DataType => equal(t, this)
+      case _ => false
+    }
+  }
+
   object DataType {
 
     trait Parser extends self.Parser[DataType] {
@@ -15,11 +23,12 @@ trait DataTypes { self: SqlParser =>
     }
 
     abstract class Integral(name: String) extends Parser {
-      case class Result()(length: Option[Int]) extends DataType {
-        override def toString =
-          name + length.map("(" + _ + ")").getOrElse("")
-      }
-      val parser = name.i ~> opt(Apply(Length)) ^^ Result()
+      val parser = name.i ~> opt(Apply(Length)) ^^ (length =>
+        new DataType with Equalizer {
+          override def hashCode = Int##
+          override def toString =
+            name + length.map("(" + _ + ")").getOrElse("")
+        })
     }
 
     case object Bit extends Integral("BIT")
@@ -31,22 +40,22 @@ trait DataTypes { self: SqlParser =>
     case object BigInt extends Integral("BIGINT")
 
     abstract class Binary(name: String) extends Parser {
-      case class Result()(length: Int) extends DataType {
-        override def toString = s"$name($length)"
-      }
-      val parser = name.i ~> Apply(Length) ^^ Result()
+      val parser = name.i ~> Apply(Length) ^^ (length =>
+        new DataType with Equalizer {
+          override def hashCode = Binary##
+          override def toString = s"$name($length)"
+        })
     }
 
     case object Binary extends Binary("BINARY")
     case object VarBinary extends Binary("VARBINARY")
 
     abstract class Character(name: String) extends Parser {
-      case class Result()(length: Int, charset: Option[String])
-          extends DataType {
-        override def toString = s"$name($length)" + charset.getOrElse("")
-      }
       val parser = name.i ~> Apply(Length) ~ opt(Charset) ^^ {
-        case length ~ charset => Result()(length, charset)
+        case length ~ charset => new DataType with Equalizer {
+          override def hashCode = Char##
+          override def toString = s"$name($length)" + charset.getOrElse("")
+        }
       }
     }
 
@@ -54,13 +63,14 @@ trait DataTypes { self: SqlParser =>
     case object VarChar extends Character("VARCHAR")
 
     abstract class Real(name: String) extends Parser {
-      case class Result(length: Option[(Int, Int)]) extends DataType {
-        override def toString = name + length.map(_.toString).getOrElse("")
-      }
-      val parser = name.i ~> opt(Apply((Length <~ ",") ~ Length)) ^^ {
-        case Some(a ~ b) => Result(Some(a -> b))
-        case None => Result(None)
-      }
+      val parser = name.i ~> opt(Apply((Length <~ ",") ~ Length)) ^^ (length =>
+        new DataType with Equalizer {
+          override def hashCode = Real##
+          override def toString = length match {
+            case Some(a ~ b) => s"$name($a, $b)"
+            case None => name
+          }
+        })
     }
 
     case object Real extends Real("REAL")
@@ -71,10 +81,12 @@ trait DataTypes { self: SqlParser =>
     case object Numeric extends Real("NUMERIC")
 
     abstract class Text(name: String) extends Parser {
-      case class Result()(charset: Option[String]) extends DataType {
-        override def toString = name + charset.getOrElse("")
-      }
-      val parser = name.i ~> opt(Charset) ^^ Result()
+      val parser = name.i ~> opt(Charset) ^^ (charset =>
+        new DataType with Equalizer {
+          override def hashCode = Text##
+          override def toString = name + charset.getOrElse("")
+        }
+      )
     }
 
     case object TinyText extends Text("TINYTEXT")
@@ -83,10 +95,9 @@ trait DataTypes { self: SqlParser =>
     case object LongText extends Text("LONGTEXT")
 
     abstract class Simple(name: String) extends Parser { self =>
-      case class Result(name: String) extends DataType {
+      val parser = name.i ^^ (name => new DataType {
         override def toString = self.name
-      }
-      val parser = name.i ^^ Result.apply
+      })
     }
 
     case object DateTime extends Simple("DATETIME")

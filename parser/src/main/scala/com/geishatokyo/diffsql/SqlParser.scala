@@ -110,4 +110,8 @@ trait SqlParser extends RegexParsers
 
 }
 
-object SqlParser extends SqlParser
+object SqlParser extends SqlParser with LaxEqualizer
+
+trait LaxEqualizer { self: SqlParser =>
+  def equal(x: DataType, y: DataType) = x.hashCode == y.hashCode
+}

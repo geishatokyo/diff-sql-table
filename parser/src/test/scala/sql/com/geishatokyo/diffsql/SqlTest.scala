@@ -60,8 +60,8 @@ no BLOB
   "difference of sqls" should "be only option" in {
     val result = SqlParser.diff(slick, mysql)
     assert(result.isSuccess, result)
-    assert(result.get.add.isEmpty, result)
-    assert(result.get.drop.isEmpty, result)
+    assert(result.get.add.isEmpty, (result.get.add, SqlParser.parseSql(slick), SqlParser.parseSql(mysql)))
+    assert(result.get.drop.isEmpty, result.get.drop)
     import SqlParser.TableOption._
     assert(result.get.options.contains(Engine.Value("InnoDB")), result)
     assert(result.get.options.contains(Charset.Value("latin1")), result)
