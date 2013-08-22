@@ -7,31 +7,13 @@ import org.scalatest.matchers._
 
 import scala.slick.driver.MySQLDriver.simple._
 
-class ParserSpec extends FlatSpec with ShouldMatchers with Samples { self =>
-
-  val mysql = """CREATE TABLE `coffees` (
-  `COF_NAME` varchar(254) NOT NULL,
-  `SUP_ID` int(11) NOT NULL,
-  `PRICE` double NOT NULL,
-  PRIMARY KEY (`COF_NAME`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1"""
-
-  val sqlite = """CREATE TABLE t1(
-t  TEXT,
-nu NUMERIC,
-i  INTEGER,
-r  REAL,
-no BLOB
-)"""
-
-  val slick = Coffees.ddl.createStatements.mkString
-
-  val fake = Fake.ddl.createStatements.mkString
+class ParserSpec extends FlatSpec with ShouldMatchers { self =>
+  import Samples._
 
   "parser" should "succeed in parsing sql" in {
     def assert(sql: String) = {
       val result = SqlParser.parseSql(sql)
-      self.assert(result.successful, result)
+      self.assert(result.isSuccess, result)
     }
     assert(slick)
     assert(mysql)
@@ -89,7 +71,7 @@ no BLOB
 
 }
 
-trait Samples {
+object Samples {
 
   object Coffees extends Table[(String, Int, Double)]("COFFEES") {
     def name = column[String]("COF_NAME", O.PrimaryKey)
@@ -104,6 +86,25 @@ trait Samples {
     def price = column[Float]("PRICE")
     def * = name ~ supID ~ price
   }
+
+  val mysql = """CREATE TABLE `coffees` (
+  `COF_NAME` varchar(254) NOT NULL,
+  `SUP_ID` int(11) NOT NULL,
+  `PRICE` double NOT NULL,
+  PRIMARY KEY (`COF_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1"""
+
+  val sqlite = """CREATE TABLE t1(
+t  TEXT,
+nu NUMERIC,
+i  INTEGER,
+r  REAL,
+no BLOB
+)"""
+
+  val slick = Coffees.ddl.createStatements.mkString
+
+  val fake = Fake.ddl.createStatements.mkString
 
   val sample1 = """CREATE TABLE `musicinfo` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,

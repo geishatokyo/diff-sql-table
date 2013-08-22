@@ -94,13 +94,18 @@ trait SqlParser extends RegexParsers
         Table(name, expand(Set(defs: _*)), Set(opts: _*))
     }
 
-  def parseSql(s: String) = parseAll(createTableStatement, s)
+  def parseSql(s: String) = parseAll(createTableStatement, s) match {
+    case Success(result, _) =>
+      scala.util.Success(result)
+    case nosuccess: NoSuccess =>
+      scala.util.Failure(new RuntimeException(nosuccess.msg))
+  }
 
   def diff(before: Table, after: Table): Diff
 
   def diff(before: String, after: String): Try[Diff] = for {
-    before <- Try(parseSql(before).get)
-    after <- Try(parseSql(after).get)
+    before <- parseSql(before)
+    after <- parseSql(after)
     sql <- Try(diff(before, after))
   } yield sql
 

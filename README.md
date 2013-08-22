@@ -2,32 +2,31 @@
 
 This library makes alter table sql from 2 create table sql.
 
-
 # Sample code 
 
 
 ## Parsing
 
-    import com.geishatokyo.diffsql.SqlParser
+```scala
+import com.geishatokyo.diffsql.SqlParser
 
-    val createTableStructure = SqlParser.parseSql( yourSql )
+val createTableStructure = SqlParser.parseSql( yourSql )
+```
 
 ## Diffing
 
+```scala
+import com.geishatokyo.diffsql.SqlParser
 
-    import com.geishatokyo.diffsql.SqlParser
+val diff = SqlParser.diff(oldSql,newSql)
 
-    val alters = SqlParser.diff(oldSql,newSql)
+diff.foreach(println)
+```
 
-    println(diff.toString())
+## Equalizer
 
-or
+```scala
+import com.geishatokyo.diffsql.{SqlParser,Differ,StrictEqualizer}
 
-    import com.geishatokyo.diffsql.SqlParser
-
-    val oldTableStructure = SqlParser.parseSql(oldSql)
-    val newTableStructure = SqlParser.parseSql(newSql)
-
-    val alters = oldTableStructure alter newTableStructure
-
-    println(diff.toString())
+val diff = (new SqlParser with Differ with StrictEqualizer).diff(oldSql,newSql)
+```
