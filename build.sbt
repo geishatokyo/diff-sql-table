@@ -4,13 +4,14 @@ version := "0.1-SNAPSHOT"
 
 scalaVersion := "2.10.2"
 
-scalacOptions ++= Seq(
-  "-feature",
-  "-language:implicitConversions",
-  "-language:postfixOps"
-)
+scalacOptions <++= (scalaVersion) map { v =>
+  if (v startsWith "2.9")
+    Seq()
+  else
+    Seq("-feature", "-language:postfixOps", "-language:implicitConversions")
+}
 
-libraryDependencies ++= Seq(
-  "com.typesafe.slick" %% "slick" % "1.0.1" % "test",
-  "org.scalatest" %% "scalatest" % "1.9.1" % "test"
-)
+
+crossScalaVersions := Seq("2.9.2", "2.10.2")
+
+libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"

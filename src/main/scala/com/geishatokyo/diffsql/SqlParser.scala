@@ -1,7 +1,6 @@
 package com.geishatokyo.diffsql
 
 import scala.util.parsing.combinator.RegexParsers
-import scala.util.Try
 
 trait Definition
 
@@ -10,7 +9,7 @@ case class Column
   (val options: Set[ColumnOption])
     extends Definition {
   override def toString =
-    s"""$name $dataType """ + options.mkString(" ")
+    name + " " + dataType + " " + options.mkString(" ")
 }
 
 case class Table(
@@ -28,7 +27,7 @@ case class Diff(
     val ADD = add.map("ADD " +)
     val DROP = drop.map("DROP " +)
     val MODIFY = modify.map("MODIFY " +)
-    s"ALTER TABLE $name " +
+    "ALTER TABLE " + name + " " +
       (ADD ++ DROP ++ MODIFY ++ options).mkString(",")
   }
 }
@@ -39,9 +38,12 @@ trait SqlParser extends RegexParsers
     with ColumnOptions
     with Keys {
 
-  implicit class CaseInsensitive(string: String) {
+  type Result = Either[String, Diff]
+
+  class CaseInsensitive(string: String) {
     def i = ("(?i)" + string).r
   }
+  implicit def caseInsensitive(string: String) = new CaseInsensitive(string)
 
   def Apply[A](p: Parser[A]) = """\(""".r ~> p <~ """\)""".r
 
@@ -95,19 +97,16 @@ trait SqlParser extends RegexParsers
     }
 
   def parseSql(s: String) = parseAll(createTableStatement, s) match {
-    case Success(result, _) =>
-      scala.util.Success(result)
-    case nosuccess: NoSuccess =>
-      scala.util.Failure(new RuntimeException(nosuccess.msg))
+    case Success(result, _) => Right(result)
+    case nosuccess: NoSuccess => Left(nosuccess.msg)
   }
 
   def diff(before: Table, after: Table): Diff
 
-  def diff(before: String, after: String): Try[Diff] = for {
-    before <- parseSql(before)
-    after <- parseSql(after)
-    sql <- Try(diff(before, after))
-  } yield sql
+  def diff(before: String, after: String): Result = for {
+    before <- parseSql(before).right
+    after <- parseSql(after).right
+  } yield diff(before, after)
 
 }
 

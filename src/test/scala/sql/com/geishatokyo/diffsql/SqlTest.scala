@@ -5,15 +5,13 @@ import com.geishatokyo.diffsql.SqlParser
 import org.scalatest._
 import org.scalatest.matchers._
 
-import scala.slick.driver.MySQLDriver.simple._
-
 class ParserSpec extends FlatSpec with ShouldMatchers { self =>
   import Samples._
 
   "parser" should "succeed in parsing sql" in {
     def assert(sql: String) = {
       val result = SqlParser.parseSql(sql)
-      self.assert(result.isSuccess, result)
+      self.assert(result.isRight, result)
     }
     assert(slick)
     assert(mysql)
@@ -28,20 +26,20 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
 
   "difference of sqls" should "be only option" in {
     val result = SqlParser.diff(mysql, slick)
-    assert(result.isSuccess, result)
-    assert(result.get.add.isEmpty, (result.get.add, SqlParser.parseSql(slick), SqlParser.parseSql(mysql)))
-    assert(result.get.drop.isEmpty, result.get.drop)
+    assert(result.isRight, result)
+    assert(result.right.get.add.isEmpty, result)
+    assert(result.right.get.drop.isEmpty, result)
     import SqlParser.TableOption._
-    assert(result.get.options.contains(Engine.Value("InnoDB")), result)
-    assert(result.get.options.contains(Charset.Value("latin1")), result)
+    assert(result.right.get.options.contains(Engine.Value("InnoDB")), result)
+    assert(result.right.get.options.contains(Charset.Value("latin1")), result)
   }
 
   "difference of sqls" should "be name and supid" in {
     val result = SqlParser.diff(slick, fake)
-    assert(result.isSuccess, result)
-    assert(result.get.add.size === 2, result)
-    assert(result.get.drop.size === 1, result)
-    assert(result.get.modify.size === 1, result)
+    assert(result.isRight, result)
+    assert(result.right.get.add.size === 2, result)
+    assert(result.right.get.drop.size === 1, result)
+    assert(result.right.get.modify.size === 1, result)
   }
 
   "ast" should "have equivalence" in {
@@ -66,26 +64,12 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
   `SUP_ID` int(11) NOT NULL UNIQUE KEY
 )"""
     val result = SqlParser.diff(coffee1, coffee2)
-    assert(result.isSuccess, result)
+    assert(result.isRight, result)
   }
 
 }
 
 object Samples {
-
-  object Coffees extends Table[(String, Int, Double)]("COFFEES") {
-    def name = column[String]("COF_NAME", O.PrimaryKey)
-    def supID = column[Int]("SUP_ID")
-    def price = column[Double]("PRICE")
-    def * = name ~ supID ~ price
-  }
-
-  object Fake extends Table[(String, String, Float)]("COFFEES") {
-    def name = column[String]("COFNAME", O.PrimaryKey)
-    def supID = column[String]("SUP_ID")
-    def price = column[Float]("PRICE")
-    def * = name ~ supID ~ price
-  }
 
   val mysql = """CREATE TABLE `coffees` (
   `COF_NAME` varchar(254) NOT NULL,
@@ -102,9 +86,9 @@ r  REAL,
 no BLOB
 )"""
 
-  val slick = Coffees.ddl.createStatements.mkString
+  val slick = """create table `COFFEES` (`COF_NAME` VARCHAR(254) NOT NULL PRIMARY KEY,`SUP_ID` INTEGER NOT NULL,`PRICE` DOUBLE NOT NULL)"""
 
-  val fake = Fake.ddl.createStatements.mkString
+  val fake = """create table `COFFEES` (`COFNAME` VARCHAR(254) NOT NULL PRIMARY KEY,`SUP_ID` VARCHAR(254) NOT NULL,`PRICE` FLOAT NOT NULL)"""
 
   val sample1 = """CREATE TABLE `musicinfo` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,

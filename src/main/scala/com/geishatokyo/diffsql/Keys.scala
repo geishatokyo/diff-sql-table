@@ -14,7 +14,7 @@ trait Keys { self: SqlParser =>
         columns: List[String])
           extends Key {
         override def toString =
-          s"""$key ${name getOrElse ""} ${columns mkString " "}"""
+          key + " " + name.getOrElse("") + " " + columns.mkString(" ")
       }
       object Value {
         def apply(

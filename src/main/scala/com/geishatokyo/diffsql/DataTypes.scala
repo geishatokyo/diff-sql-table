@@ -19,7 +19,7 @@ trait DataTypes { self: SqlParser =>
     trait Parser extends self.Parser[DataType] {
       val Length = """\d+""".r ^^ (_.toInt)
       val Charset =
-        "CHARACTER".i ~ "SET".i ~> value ^^ (name => s"CHARACTER SET $name")
+        "CHARACTER".i ~ "SET".i ~> value ^^ ("CHARACTER SET " + _)
       val parser: self.Parser[DataType]
       def apply(input: Input) = parse(parser, input)
     }
@@ -47,7 +47,7 @@ trait DataTypes { self: SqlParser =>
         new DataType with Equalizer {
           val fields = length
           override def hashCode = Binary##
-          override def toString = s"$name($length)"
+          override def toString = name + "(" + length + ")"
         })
     }
 
@@ -59,7 +59,7 @@ trait DataTypes { self: SqlParser =>
         case length ~ charset => new DataType with Equalizer {
           val fields = (length, charset)
           override def hashCode = Char##
-          override def toString = s"$name($length)" + charset.getOrElse("")
+          override def toString = name+"("+length+")"+charset.getOrElse("")
         }
       }
     }
@@ -73,7 +73,7 @@ trait DataTypes { self: SqlParser =>
           val fields = length
           override def hashCode = Real##
           override def toString = length match {
-            case Some(a ~ b) => s"$name($a, $b)"
+            case Some(a ~ b) => name+"("+a+","+b+")"
             case None => name
           }
         })
