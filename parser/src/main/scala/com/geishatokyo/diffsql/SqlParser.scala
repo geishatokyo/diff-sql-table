@@ -134,3 +134,8 @@ trait Differ { self: SqlParser =>
 trait LaxEqualizer { self: SqlParser =>
   def equal(x: DataType, y: DataType) = x.hashCode == y.hashCode
 }
+
+trait StrictEqualizer { self: SqlParser =>
+  def equal(x: DataType, y: DataType) =
+    x.hashCode == y.hashCode && x.fields == y.fields
+}

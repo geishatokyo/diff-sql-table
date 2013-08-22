@@ -1,6 +1,8 @@
 package com.geishatokyo.diffsql
 
-sealed trait DataType
+sealed trait DataType {
+  val fields: Any
+}
 
 trait DataTypes { self: SqlParser =>
 
@@ -25,6 +27,7 @@ trait DataTypes { self: SqlParser =>
     abstract class Integral(name: String) extends Parser {
       val parser = name.i ~> opt(Apply(Length)) ^^ (length =>
         new DataType with Equalizer {
+          val fields = length
           override def hashCode = Int##
           override def toString =
             name + length.map("(" + _ + ")").getOrElse("")
@@ -42,6 +45,7 @@ trait DataTypes { self: SqlParser =>
     abstract class Binary(name: String) extends Parser {
       val parser = name.i ~> Apply(Length) ^^ (length =>
         new DataType with Equalizer {
+          val fields = length
           override def hashCode = Binary##
           override def toString = s"$name($length)"
         })
@@ -53,6 +57,7 @@ trait DataTypes { self: SqlParser =>
     abstract class Character(name: String) extends Parser {
       val parser = name.i ~> Apply(Length) ~ opt(Charset) ^^ {
         case length ~ charset => new DataType with Equalizer {
+          val fields = (length, charset)
           override def hashCode = Char##
           override def toString = s"$name($length)" + charset.getOrElse("")
         }
@@ -65,6 +70,7 @@ trait DataTypes { self: SqlParser =>
     abstract class Real(name: String) extends Parser {
       val parser = name.i ~> opt(Apply((Length <~ ",") ~ Length)) ^^ (length =>
         new DataType with Equalizer {
+          val fields = length
           override def hashCode = Real##
           override def toString = length match {
             case Some(a ~ b) => s"$name($a, $b)"
@@ -83,6 +89,7 @@ trait DataTypes { self: SqlParser =>
     abstract class Text(name: String) extends Parser {
       val parser = name.i ~> opt(Charset) ^^ (charset =>
         new DataType with Equalizer {
+          val fields = charset
           override def hashCode = Text##
           override def toString = name + charset.getOrElse("")
         }
@@ -96,6 +103,7 @@ trait DataTypes { self: SqlParser =>
 
     abstract class Simple(name: String) extends Parser { self =>
       val parser = name.i ^^ (name => new DataType {
+        val fields = ()
         override def toString = self.name
       })
     }

@@ -41,6 +41,7 @@ no BLOB
     assert(sample3)
     assert(sample4)
     assert(sample5)
+    assert(mysqlDocSample)
   }
 
   "difference of sqls" should "be only option" in {
@@ -158,5 +159,14 @@ PRIMARY KEY (`id`),
 UNIQUE KEY `KEY_MusicInfo_musicHash` (`musicHash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 """
+
+  val mysqlDocSample = """CREATE TABLE pet (
+name VARCHAR(20),
+owner VARCHAR(20),
+species VARCHAR(20),
+sex CHAR(1),
+birth DATE,
+death DATE
+)"""
 
 }
