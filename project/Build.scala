@@ -28,7 +28,7 @@ object DiffSqlBuild extends Build {
     id = "diff-sql-table-parser",
     base = file("parser"),
     settings = defaultSettings ++ Seq(
-      scalaVersion := "2.10.2",
+      scalaVersion := "2.9.2",
       libraryDependencies += scalatest
     )
   )
@@ -37,7 +37,6 @@ object DiffSqlBuild extends Build {
     id = "diff-sql-table-plugin",
     base = file("plugin"),
     settings = defaultSettings ++ Seq(
-      scalaVersion := "2.9.2",
       sbtPlugin := true
     )
   ) dependsOn parser

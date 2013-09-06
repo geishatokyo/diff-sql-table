@@ -15,7 +15,13 @@ case class Column
 case class Table(
   name: String,
   columns: Set[Definition],
-  options: Set[TableOption])
+  options: Set[TableOption]) {
+  def create =
+    "CREATE TABLE " + name + " ( " +
+    columns.mkString(",") +
+    " );"
+  def drop = "DROP TABLE " + name
+}
 
 case class Diff(
   name: String,
@@ -37,8 +43,6 @@ trait SqlParser extends RegexParsers
     with TableOptions
     with ColumnOptions
     with Keys {
-
-  type Result = Either[String, Diff]
 
   class CaseInsensitive(string: String) {
     def i = ("(?i)" + string).r
@@ -93,20 +97,33 @@ trait SqlParser extends RegexParsers
     value ~ Apply(repsep(createDinition, ",".r)) ~
     rep(tableOption) <~ opt(";".r) ^^ {
       case name ~ defs ~ opts =>
-        Table(name, expand(Set(defs: _*)), Set(opts: _*))
+        Table(name.toUpperCase, expand(Set(defs: _*)), Set(opts: _*))
     }
 
-  def parseSql(s: String) = parseAll(createTableStatement, s) match {
+  def parseSql(s: String) = parseAll(rep(createTableStatement), s) match {
     case Success(result, _) => Right(result)
     case nosuccess: NoSuccess => Left(nosuccess.msg)
   }
 
   def diff(before: Table, after: Table): Diff
 
-  def diff(before: String, after: String): Result = for {
+  def diff(before: String, after: String): Either[String, Diff] = for {
     before <- parseSql(before).right
     after <- parseSql(after).right
-  } yield diff(before, after)
+  } yield diff(before.head, after.head)
+
+  def genSql(before: String, after: String): Either[String, Set[String]] = for {
+    before <- parseSql(before).right
+    after <- parseSql(after).right
+  } yield (before.map(_.name) ++ after.map(_.name)).toSet map { (name: String) =>
+    val b = before.groupBy(_.name).mapValues(_.head)
+    val a = after.groupBy(_.name).mapValues(_.head)
+    ((b get name, a get name): @unchecked) match {
+      case (Some(before), Some(after)) => diff(before, after).toString
+      case (None, Some(after)) => after.create
+      case (Some(before), None) => before.drop
+    }
+  }
 
 }
 
