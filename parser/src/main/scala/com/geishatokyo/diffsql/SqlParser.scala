@@ -58,7 +58,7 @@ trait SqlParser extends RegexParsers
   }
 
   val columnOption = { import ColumnOption._
-    NotNull | Null | PrimaryKey | UniqueKey | AutoIncrement
+    NotNull | Null | PrimaryKey | UniqueKey | AutoIncrement | Default
   }
 
   val columnDefinition = value ~ dataType ~ rep(columnOption) ^^ {
@@ -71,7 +71,7 @@ trait SqlParser extends RegexParsers
   }
 
   val dataType = { import DataType._
-    Bit | TinyInt | SmallInt | MediumInt | Integer | Int | BigInt |
+    Bit | Boolean | Bool | TinyInt | SmallInt | MediumInt | Integer | Int | BigInt |
     Binary | VarBinary |
     Char | VarChar |
     Real | Double | Float |
@@ -102,26 +102,27 @@ trait SqlParser extends RegexParsers
 
   def parseSql(s: String) = parseAll(rep(createTableStatement), s) match {
     case Success(result, _) => Right(result)
-    case nosuccess: NoSuccess => Left(nosuccess.msg)
+    case nosuccess: NoSuccess => Left(nosuccess.toString)
   }
 
-  def diff(before: Table, after: Table): Diff
+  def diff(before: Table, after: Table): Option[Diff]
 
-  def diff(before: String, after: String): Either[String, Diff] = for {
+  def diff(after: String, before: String): Either[String, Diff] = for {
     before <- parseSql(before).right
     after <- parseSql(after).right
-  } yield diff(before.head, after.head)
+    result <- diff(before.head, after.head).map(Right.apply).getOrElse(Left("")).right
+  } yield result
 
-  def genSql(before: String, after: String): Either[String, Set[String]] = for {
+  def genSql(after: String, before: String): Either[String, Set[String]] = for {
     before <- parseSql(before).right
     after <- parseSql(after).right
-  } yield (before.map(_.name) ++ after.map(_.name)).toSet map { (name: String) =>
+  } yield (before.map(_.name) ++ after.map(_.name)).toSet.flatMap { (name: String) =>
     val b = before.groupBy(_.name).mapValues(_.head)
     val a = after.groupBy(_.name).mapValues(_.head)
     ((b get name, a get name): @unchecked) match {
-      case (Some(before), Some(after)) => diff(before, after).toString
-      case (None, Some(after)) => after.create
-      case (Some(before), None) => before.drop
+      case (Some(before), Some(after)) => diff(before, after).map(_.toString)
+      case (None, Some(after)) => Some(after.create)
+      case (Some(before), None) => Some(before.drop)
     }
   }
 
@@ -130,7 +131,7 @@ trait SqlParser extends RegexParsers
 object SqlParser extends SqlParser with Differ with LaxEqualizer
 
 trait Differ { self: SqlParser =>
-  def diff(before: Table, after: Table) = {
+  def diff(before: Table, after: Table): Option[Diff] = {
     val changes =
     before.columns.collect {
       case b: Column => after.columns.collect {
@@ -142,13 +143,15 @@ trait Differ { self: SqlParser =>
       case c: Column => !changes.map(_.name).contains(c.name)
       case _ => true
     }
-    Diff(before.name,
-      remove(before.columns diff after.columns),
-      remove(after.columns diff before.columns).collect {
-        case c: Column => c.name
-      },
-      changes,
-      before.options diff after.options)
+    val add = remove(before.columns diff after.columns)
+    val drop = remove(after.columns diff before.columns).collect {
+      case c: Column => c.name
+    }
+    val ops = before.options diff after.options
+    if (changes.isEmpty && add.isEmpty && drop.isEmpty && ops.isEmpty)
+      None
+    else
+      Some(Diff(before.name, add, drop, changes, ops))
   }
 }
 

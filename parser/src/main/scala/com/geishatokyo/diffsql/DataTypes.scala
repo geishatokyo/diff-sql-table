@@ -35,6 +35,8 @@ trait DataTypes { self: SqlParser =>
     }
 
     case object Bit extends Integral("BIT")
+    case object Bool extends Integral("BOOL")
+    case object Boolean extends Integral("BOOLEAN")
     case object TinyInt extends Integral("TINYINT")
     case object SmallInt extends Integral("SMALLINT")
     case object MediumInt extends Integral("MEDIUMINT")
@@ -102,10 +104,11 @@ trait DataTypes { self: SqlParser =>
     case object LongText extends Text("LONGTEXT")
 
     abstract class Simple(name: String) extends Parser { self =>
-      val parser = name.i ^^ (name => new DataType {
+      val parser = name.i ^^^ new DataType {
         val fields = ()
+        override def hashCode = self.hashCode
         override def toString = self.name
-      })
+      }
     }
 
     case object DateTime extends Simple("DATETIME")

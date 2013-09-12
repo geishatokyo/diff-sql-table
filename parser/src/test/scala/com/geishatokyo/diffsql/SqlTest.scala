@@ -26,12 +26,7 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
 
   "difference of sqls" should "be only option" in {
     val result = SqlParser.diff(mysql, slick)
-    assert(result.isRight, result)
-    assert(result.right.get.add.isEmpty, result)
-    assert(result.right.get.drop.isEmpty, result)
-    import SqlParser.TableOption._
-    assert(result.right.get.options.contains(Engine.Value("InnoDB")), result)
-    assert(result.right.get.options.contains(Charset.Value("latin1")), result)
+    assert(result.isLeft, result)
   }
 
   "difference of sqls" should "be name and supid" in {
@@ -50,6 +45,7 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
     assert(Key.Primary.Value() === Key.Primary.Value())
     assert(Key.Primary.Value(Some("a")) != Key.Primary.Value())
     assert(Key.Primary.Value(Some("a")) != Key.Unique.Value(Some("a")))
+    assert(DataType.DateTime == DataType.DateTime)
   }
 
   "primary key and unique key" should "be abstracted from sql" in {
@@ -64,7 +60,7 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
   `SUP_ID` int(11) NOT NULL UNIQUE KEY
 )"""
     val result = SqlParser.diff(coffee1, coffee2)
-    assert(result.isRight, result)
+    assert(result.isLeft, result)
   }
 
 }

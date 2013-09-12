@@ -26,7 +26,11 @@ trait ColumnOptions { self: SqlParser =>
       "UNIQUE KEY",
       "UNIQUE".i ~ opt("KEY".i)
     )
-
+    case object Default extends self.Parser[ColumnOption] {
+      case class Value(value: String) extends ColumnOption
+      def apply(in: Input) =
+        parse("DEFAULT".i ~> value ^^ Value.apply, in)
+    }
   }
 
 }

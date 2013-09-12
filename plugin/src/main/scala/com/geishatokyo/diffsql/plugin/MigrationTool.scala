@@ -12,9 +12,15 @@ object MigrationTool extends Plugin {
 
   lazy val sqlDir = SettingKey[File]("sql-directiory")
   lazy val dateFormat = SettingKey[DateFormat]("file-date-format")
+  lazy val template = SettingKey[Set[String] => String]("migration-template")
 
-  lazy val migrate = (sqlDir, dateFormat) { (dir, format) =>
-    Command.command("migration") { state =>
+  lazy val migrate = (sqlDir, template, dateFormat) { (dir, template, format) =>
+    Command.single("migrate") { (state, arg) =>
+      val out = file(format.format(new java.util.Date))
+      val write = arg match {
+        case "print" => println(_: String)
+        case "file" => IO.write(out, _: String)
+      }
       val files = dir
         .listFiles
         .toList
@@ -22,12 +28,8 @@ object MigrationTool extends Plugin {
         .reverse
       files match {
         case n :: o :: _ =>
-          SqlParser.genSql(
-            Source.fromFile(o).mkString,
-            Source.fromFile(n).mkString).fold({ msg =>
-              throw new RuntimeException(msg)
-            }, _ foreach println)
-            state
+          write(template(SqlParser.genSql(IO.read(n), IO.read(o)).fold(msg => throw new RuntimeException(msg), identity)))
+          state
         case _ => throw new RuntimeException("file not found")
       }
     }
