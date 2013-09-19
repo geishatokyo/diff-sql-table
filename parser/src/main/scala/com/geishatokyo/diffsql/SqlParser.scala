@@ -12,15 +12,26 @@ case class Column
     name + " " + dataType + " " + options.mkString(" ")
 }
 
+sealed trait Result {
+  val name: String
+}
+
 case class Table(
   name: String,
   columns: Set[Definition],
-  options: Set[TableOption]) {
-  def create =
-    "CREATE TABLE " + name + " ( " +
-    columns.mkString(",") +
-    " );"
-  def drop = "DROP TABLE " + name
+  options: Set[TableOption]) { self =>
+  def create = new Result {
+    val name = self.name
+    override def toString =
+      "CREATE TABLE " + name + " ( " +
+      columns.mkString(",") +
+      " );"
+  }
+  def drop = new Result {
+    val name = self.name
+    override def toString =
+      "DROP TABLE " + name
+  }
 }
 
 case class Diff(
@@ -28,7 +39,8 @@ case class Diff(
   add: Set[Definition],
   drop: Set[String],
   modify: Set[Column],
-  options: Set[TableOption]) {
+  options: Set[TableOption])
+    extends Result {
   override def toString = {
     val ADD = add.map("ADD " +)
     val DROP = drop.map("DROP " +)
@@ -101,28 +113,28 @@ trait SqlParser extends RegexParsers
     }
 
   def parseSql(s: String) = parseAll(rep(createTableStatement), s) match {
-    case Success(result, _) => Right(result)
-    case nosuccess: NoSuccess => Left(nosuccess.toString)
+    case Success(result, _) => result
+    case nosuccess: NoSuccess =>
+      throw new RuntimeException(nosuccess.toString)
   }
 
   def diff(before: Table, after: Table): Option[Diff]
 
-  def diff(after: String, before: String): Either[String, Diff] = for {
-    before <- parseSql(before).right
-    after <- parseSql(after).right
-    result <- diff(before.head, after.head).map(Right.apply).getOrElse(Left("")).right
-  } yield result
+  def diff(after: String, before: String): Option[Diff] =
+    diff(parseSql(before).head, parseSql(after).head)
 
-  def genSql(after: String, before: String): Either[String, Set[String]] = for {
-    before <- parseSql(before).right
-    after <- parseSql(after).right
-  } yield (before.map(_.name) ++ after.map(_.name)).toSet.flatMap { (name: String) =>
-    val b = before.groupBy(_.name).mapValues(_.head)
-    val a = after.groupBy(_.name).mapValues(_.head)
-    ((b get name, a get name): @unchecked) match {
-      case (Some(before), Some(after)) => diff(before, after).map(_.toString)
-      case (None, Some(after)) => Some(after.create)
-      case (Some(before), None) => Some(before.drop)
+  def genSql(a: String, b: String): Set[Result] = {
+    val before = parseSql(b)
+    val after = parseSql(a)
+    (before.map(_.name) ++ after.map(_.name)).toSet.flatMap { (name: String) =>
+      val b = before.groupBy(_.name).mapValues(_.head)
+      val a = after.groupBy(_.name).mapValues(_.head)
+      ((b get name, a get name): @unchecked) match {
+        case (Some(before), Some(after)) =>
+          diff(before, after)
+        case (None, Some(after)) => Some(after.create)
+        case (Some(before), None) => Some(before.drop)
+      }
     }
   }
 

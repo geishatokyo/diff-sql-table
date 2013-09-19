@@ -6,38 +6,65 @@ import scala.io.Source
 
 import java.text.{DateFormat,SimpleDateFormat}
 
-import com.geishatokyo.diffsql.SqlParser
+import com.geishatokyo.diffsql.{SqlParser,Result}
 
 object MigrationTool extends Plugin {
 
-  lazy val sqlDir = SettingKey[File]("sql-directiory")
-  lazy val dateFormat = SettingKey[DateFormat]("file-date-format")
-  lazy val template = SettingKey[Set[String] => String]("migration-template")
+  type Template = (Set[Result], Set[Result]) => String
 
-  lazy val migrate = (sqlDir, template, dateFormat) { (dir, template, format) =>
-    Command.single("migrate") { (state, arg) =>
-      val out = file(format.format(new java.util.Date))
-      val write = arg match {
-        case "print" => println(_: String)
-        case "file" => IO.write(out, _: String)
-      }
+  lazy val sqlDirs =
+    SettingKey[Seq[File]]("sql-directiories")
+  lazy val dateFormat =
+    SettingKey[DateFormat]("file-date-format")
+  lazy val migrationTemplate =
+    SettingKey[Template]("migration-template")
+
+  def fileWith(dirs: Seq[File], format: DateFormat)(f: (String, String) => Unit) =
+    for (dir <- dirs) {
       val files = dir
         .listFiles
         .toList
         .sortBy(f => format.parse(f.getName))
         .reverse
       files match {
-        case n :: o :: _ =>
-          write(template(SqlParser.genSql(IO.read(n), IO.read(o)).fold(msg => throw new RuntimeException(msg), identity)))
-          state
-        case _ => throw new RuntimeException("file not found")
+        case n :: o :: _ => f(IO.read(n), IO.read(o))
+        case _ =>
+          throw new RuntimeException("file not found")
       }
     }
-  }
+
+  def genSql(name: String, f: (String, String) => Set[Result]) =
+    (sqlDirs, dateFormat) { (dirs, format) =>
+      Command.command(name) { state =>
+        fileWith(dirs, format) { (n, o) =>
+          println(f(n, o).mkString)
+        }
+        state
+      }
+    }
+
+  lazy val migrate = genSql("migrate", SqlParser.genSql)
+  lazy val rollback =
+    genSql("rollback", (a, b) => SqlParser.genSql(b, a))
+
+  lazy val genMigration =
+    (sqlDirs, migrationTemplate, dateFormat) { (dirs, template, format) =>
+      Command.command("gen-migration-file") { state =>
+        val out = file(format.format(new java.util.Date))
+        fileWith(dirs, format) { (n, o) =>
+          println(template(
+            SqlParser.genSql(n, o),
+            SqlParser.genSql(o, n)))
+        }
+        state
+      }
+    }
+
 
   lazy val migrationToolSettings: Seq[Setting[_]] = Seq(
     dateFormat := new SimpleDateFormat("yyyyMMddHHmmss"),
-    commands <+= migrate
+    sqlDirs := Nil,
+    commands <++= Seq(migrate, rollback, genMigration).join
   )
 
 }
