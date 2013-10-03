@@ -10,14 +10,14 @@ import com.geishatokyo.diffsql.{SqlParser,Result}
 
 object MigrationTool extends Plugin {
 
-  type Template = (Set[Result], Set[Result]) => String
+  type Migration = (Set[Result], Set[Result]) => Unit
 
   lazy val sqlDirs =
     SettingKey[Seq[File]]("sql-directiories")
   lazy val dateFormat =
     SettingKey[DateFormat]("file-date-format")
-  lazy val migrationTemplate =
-    SettingKey[Template]("migration-template")
+  lazy val migration =
+    SettingKey[Migration]("migration")
 
   def fileWith(dirs: Seq[File], format: DateFormat)(f: (String, String) => Unit) =
     for (dir <- dirs) {
@@ -48,13 +48,11 @@ object MigrationTool extends Plugin {
     genSql("rollback", (a, b) => SqlParser.genSql(b, a))
 
   lazy val genMigration =
-    (sqlDirs, migrationTemplate, dateFormat) { (dirs, template, format) =>
+    (sqlDirs, migration, dateFormat) { (dirs, m, format) =>
       Command.command("gen-migration-file") { state =>
         val out = file(format.format(new java.util.Date))
         fileWith(dirs, format) { (n, o) =>
-          println(template(
-            SqlParser.genSql(n, o),
-            SqlParser.genSql(o, n)))
+          m(SqlParser.genSql(n, o), SqlParser.genSql(o, n))
         }
         state
       }
@@ -64,6 +62,10 @@ object MigrationTool extends Plugin {
   lazy val migrationToolSettings: Seq[Setting[_]] = Seq(
     dateFormat := new SimpleDateFormat("yyyyMMddHHmmss"),
     sqlDirs := Nil,
+    migration := ({ (x, y) =>
+      println(x)
+      println(y)
+    }: Migration),
     commands <++= Seq(migrate, rollback, genMigration).join
   )
 

@@ -2,54 +2,6 @@ package com.geishatokyo.diffsql
 
 import scala.util.parsing.combinator.RegexParsers
 
-trait Definition
-
-case class Column
-  (name: String, dataType: DataType)
-  (val options: Set[ColumnOption])
-    extends Definition {
-  override def toString =
-    name + " " + dataType + " " + options.mkString(" ")
-}
-
-sealed trait Result {
-  val name: String
-}
-
-case class Table(
-  name: String,
-  columns: Set[Definition],
-  options: Set[TableOption]) { self =>
-  def create = new Result {
-    val name = self.name
-    override def toString =
-      "CREATE TABLE " + name + " ( " +
-      columns.mkString(",") +
-      " );"
-  }
-  def drop = new Result {
-    val name = self.name
-    override def toString =
-      "DROP TABLE " + name
-  }
-}
-
-case class Diff(
-  name: String,
-  add: Set[Definition],
-  drop: Set[String],
-  modify: Set[Column],
-  options: Set[TableOption])
-    extends Result {
-  override def toString = {
-    val ADD = add.map("ADD " +)
-    val DROP = drop.map("DROP " +)
-    val MODIFY = modify.map("MODIFY " +)
-    "ALTER TABLE " + name + " " +
-      (ADD ++ DROP ++ MODIFY ++ options).mkString(",")
-  }
-}
-
 trait SqlParser extends RegexParsers
     with DataTypes
     with TableOptions
@@ -75,7 +27,7 @@ trait SqlParser extends RegexParsers
 
   val columnDefinition = value ~ dataType ~ rep(columnOption) ^^ {
     case name ~ typ ~ opts =>
-      Column(name.toLowerCase, typ)(Set(opts:_*))
+      Column(name, typ)(Set(opts:_*))
   }
 
   val createDinition = { import Key._
@@ -109,7 +61,7 @@ trait SqlParser extends RegexParsers
     value ~ Apply(repsep(createDinition, ",".r)) ~
     rep(tableOption) <~ opt(";".r) ^^ {
       case name ~ defs ~ opts =>
-        Table(name.toUpperCase, expand(Set(defs: _*)), Set(opts: _*))
+        Table(name, expand(Set(defs: _*)), Set(opts: _*))
     }
 
   def parseSql(s: String) = parseAll(rep(createTableStatement), s) match {
@@ -126,7 +78,7 @@ trait SqlParser extends RegexParsers
   def genSql(a: String, b: String): Set[Result] = {
     val before = parseSql(b)
     val after = parseSql(a)
-    (before.map(_.name) ++ after.map(_.name)).toSet.flatMap { (name: String) =>
+    (before.map(_.name) ++ after.map(_.name)).toSet.flatMap { (name: Name) =>
       val b = before.groupBy(_.name).mapValues(_.head)
       val a = after.groupBy(_.name).mapValues(_.head)
       ((b get name, a get name): @unchecked) match {

@@ -10,22 +10,22 @@ trait Keys { self: SqlParser =>
         extends self.Parser[Key] {
       case class Value(
         key: String,
-        name: Option[String],
-        columns: List[String])
+        name: Option[Name],
+        columns: List[Name])
           extends Key {
         override def toString =
           key + " " + name.getOrElse("") + " " + columns.mkString(" ")
       }
       object Value {
         def apply(
-          name: Option[String] = None,
-          columns: List[String] = Nil)
+          name: Option[Name] = None,
+          columns: List[Name] = Nil)
             : Value = Value(key, name, columns)
       }
       def apply(in: Input) =
         parse(parser ~> opt(value) ~ Apply(repsep(value, ",".r)) ^^ {
           case name ~ columns =>
-            Value(name.map(_.toLowerCase), columns.map(_.toLowerCase))
+            Value(name.map(Name.apply), columns.map(Name.apply))
         }, in)
     }
 
