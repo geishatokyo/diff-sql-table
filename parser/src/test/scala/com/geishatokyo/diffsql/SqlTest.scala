@@ -1,6 +1,6 @@
 package com.geishatokyo.diffsql.test
 
-import com.geishatokyo.diffsql.SqlParser
+import com.geishatokyo.diffsql._
 
 import org.scalatest._
 import org.scalatest.matchers._
@@ -9,43 +9,28 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
   import Samples._
 
   "parser" should "succeed in parsing sql" in {
-    def assert(sql: String) = {
-      val result = SqlParser.parseSql(sql)
-      self.assert(result.isRight, result)
-    }
-    assert(slick)
-    assert(mysql)
-    assert(sqlite)
-    assert(sample1)
-    assert(sample2)
-    assert(sample3)
-    assert(sample4)
-    assert(sample5)
-    assert(mysqlDocSample)
+    SqlParser.parseSql(slick)
+    SqlParser.parseSql(mysql)
+    SqlParser.parseSql(sqlite)
+    SqlParser.parseSql(sample1)
+    SqlParser.parseSql(sample2)
+    SqlParser.parseSql(sample3)
+    SqlParser.parseSql(sample4)
+    SqlParser.parseSql(sample5)
+    SqlParser.parseSql(mysqlDocSample)
   }
 
   "difference of sqls" should "be only option" in {
     val result = SqlParser.diff(mysql, slick)
-    assert(result.isLeft, result)
+    assert(result.isEmpty, result)
   }
 
   "difference of sqls" should "be name and supid" in {
     val result = SqlParser.diff(slick, fake)
-    assert(result.isRight, result)
-    assert(result.right.get.add.size === 2, result)
-    assert(result.right.get.drop.size === 1, result)
-    assert(result.right.get.modify.size === 1, result)
-  }
-
-  "ast" should "have equivalence" in {
-    import SqlParser._
-    assert(TableOption.Engine.Value("a") === TableOption.Engine.Value("a"))
-    assert(TableOption.Engine.Value("a") != TableOption.Engine.Value("b"))
-    assert(TableOption.Engine.Value("a") != TableOption.Charset.Value("a"))
-    assert(Key.Primary.Value() === Key.Primary.Value())
-    assert(Key.Primary.Value(Some("a")) != Key.Primary.Value())
-    assert(Key.Primary.Value(Some("a")) != Key.Unique.Value(Some("a")))
-    assert(DataType.DateTime == DataType.DateTime)
+    assert(result.nonEmpty, result)
+    assert(result.get.add.size === 2, result)
+    assert(result.get.drop.size === 1, result)
+    assert(result.get.modify.size === 1, result)
   }
 
   "primary key and unique key" should "be abstracted from sql" in {
@@ -60,7 +45,7 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
   `SUP_ID` int(11) NOT NULL UNIQUE KEY
 )"""
     val result = SqlParser.diff(coffee1, coffee2)
-    assert(result.isLeft, result)
+    assert(result.isEmpty, result)
   }
 
 }

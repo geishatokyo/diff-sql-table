@@ -2,10 +2,31 @@ package com.geishatokyo.diffsql
 
 import scala.util.parsing.combinator.RegexParsers
 
+trait Result {
+  val name: Name
+}
+
+case class Name(name: String) {
+  override def equals(x: Any) = x match {
+    case n: Name => name.equalsIgnoreCase(n.name)
+    case _ => false
+  }
+  override def hashCode = name.toLowerCase##
+  override def toString = name
+}
+object Name {
+  implicit def nameToString(name: Name) = name.name
+  implicit def stringToName(string: String) = Name(string)
+}
+
+trait Definition
+
 trait SqlParser extends RegexParsers
     with DataTypes
-    with TableOptions
     with ColumnOptions
+    with Columns
+    with TableOptions
+    with Tables
     with Keys {
 
   class CaseInsensitive(string: String) {
@@ -17,6 +38,11 @@ trait SqlParser extends RegexParsers
 
   val value = """[\w`]+""".r
 
+  trait SelfParser[A] extends Parser[A] {
+    val parser: Parser[A]
+    final def apply(input: Input) = parser(input)
+  }
+
   val tableOption = { import TableOption._
     Engine | Charset | AutoIncrement
   }
@@ -25,13 +51,8 @@ trait SqlParser extends RegexParsers
     NotNull | Null | PrimaryKey | UniqueKey | AutoIncrement | Default
   }
 
-  val columnDefinition = value ~ dataType ~ rep(columnOption) ^^ {
-    case name ~ typ ~ opts =>
-      Column(name, typ)(Set(opts:_*))
-  }
-
-  val createDinition = { import Key._
-    columnDefinition | Primary | Unique | Index
+  val dinition = { import Key._
+    Column | Primary | Unique | Index
   }
 
   val dataType = { import DataType._
@@ -45,26 +66,7 @@ trait SqlParser extends RegexParsers
     TinyBlob | Blob | MediumBlob | LongBlob
   }
 
-  def expand(defs: Set[Definition]) = defs.flatMap {
-    case c: Column => import ColumnOption._, Key._
-      c.options.collect {
-        case PrimaryKey.Value =>
-          Primary.Value(None, List(c.name)): Definition
-        case UniqueKey.Value =>
-          Unique.Value(None, List(c.name)): Definition
-      } + c
-    case x => Set(x)
-  }
-
-  val createTableStatement =
-    "CREATE".i ~ "TABLE".i ~ opt("IF".i ~ "NOT".i ~ "EXISTS".i) ~>
-    value ~ Apply(repsep(createDinition, ",".r)) ~
-    rep(tableOption) <~ opt(";".r) ^^ {
-      case name ~ defs ~ opts =>
-        Table(name, expand(Set(defs: _*)), Set(opts: _*))
-    }
-
-  def parseSql(s: String) = parseAll(rep(createTableStatement), s) match {
+  def parseSql(s: String) = parseAll(rep(Table), s) match {
     case Success(result, _) => result
     case nosuccess: NoSuccess =>
       throw new RuntimeException(nosuccess.toString)
@@ -87,6 +89,21 @@ trait SqlParser extends RegexParsers
         case (None, Some(after)) => Some(after.create)
         case (Some(before), None) => Some(before.drop)
       }
+    }
+  }
+
+  case class Diff(
+    name: Name,
+    add: Set[Definition],
+    drop: Set[Name],
+    modify: Set[Column],
+    options: Set[TableOption])
+      extends Result {
+    override def toString = {
+      val ADD = add.map("ADD " +)
+      val DROP = drop.map("DROP " +)
+      val MODIFY = modify.map("MODIFY " +)
+      "ALTER TABLE " + name + " " + (ADD ++ DROP ++ MODIFY ++ options).mkString(",") + ";"
     }
   }
 

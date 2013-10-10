@@ -1,27 +1,24 @@
 package com.geishatokyo.diffsql
 
-sealed trait TableOption
-
 trait TableOptions { self: SqlParser =>
+
+  sealed abstract class TableOption(singleton: { val key: String }, value: String) {
+    override def toString = singleton.key + "=" + value
+  }
 
   object TableOption {
 
-    sealed abstract class Parser(key: String, parser: self.Parser[Any])
-        extends self.Parser[TableOption] {
-      case class Value(key: String, value: String) extends TableOption {
-        override def toString = key+"="+value
-      }
-      object Value { def apply(value: String): Value = Value(key, value) }
+    sealed abstract class Parser(val key: String, p: self.Parser[Any]) extends SelfParser[TableOption] {
+      def apply(key: String): TableOption
+      val parser = p ~ opt("=") ~> value ^^ apply
       def this(key: String) = this(key, key.i)
-      def apply(in: Input) =
-        parse(parser ~ opt("=") ~> value ^^ Value.apply, in)
     }
 
+    case class Engine(value: String) extends TableOption(Engine, value)
     case object Engine extends Parser("ENGINE")
-    case object Charset extends Parser(
-      "CHARACTER SET",
-      opt("DEFAULT".i) ~ ("CHARACTER".i ~ "SET".i | "CHARSET".i)
-    )
+    case class Charset(value: String) extends TableOption(Charset, value)
+    case object Charset extends Parser("CHARACTER SET", opt("DEFAULT".i) ~ ("CHARACTER".i ~ "SET".i | "CHARSET".i))
+    case class AutoIncrement(value: String) extends TableOption(AutoIncrement, value)
     case object AutoIncrement extends Parser("AUTO_INCREMENT")
 
   }
