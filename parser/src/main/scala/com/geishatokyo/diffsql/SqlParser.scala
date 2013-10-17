@@ -29,6 +29,13 @@ trait SqlParser extends RegexParsers
     with Tables
     with Keys {
 
+
+  def className[A](c: Class[A]) = {
+    val m = c.getClass.getDeclaredMethod("getSimpleBinaryName")
+    m.setAccessible(true)
+    m.invoke(c).toString
+  }
+
   class CaseInsensitive(string: String) {
     def i = ("(?i)" + string).r
   }
@@ -38,9 +45,11 @@ trait SqlParser extends RegexParsers
 
   val value = """[\w`]+""".r
 
-  trait SelfParser[A] extends Parser[A] {
-    val parser: Parser[A]
-    final def apply(input: Input) = parser(input)
+  trait SelfParser[A] {
+    def parser: Parser[A]
+  }
+  object SelfParser {
+    implicit def parser[A](p: SelfParser[A]) = p.parser
   }
 
   val tableOption = { import TableOption._
@@ -56,14 +65,12 @@ trait SqlParser extends RegexParsers
   }
 
   val dataType = { import DataType._
-    Bit | Boolean | Bool | TinyInt | SmallInt | MediumInt | Integer | Int | BigInt |
-    Binary | VarBinary |
-    Char | VarChar |
-    Real | Double | Float |
-    Decimal | Numeric |
-    TinyText | Text | MediumText | LongText |
-    DateTime | Date | TimeStamp | Time | Year |
-    TinyBlob | Blob | MediumBlob | LongBlob
+    BOOLEAN | INTEGER | INT | BIGINT |
+    CHAR | VARCHAR |
+    REAL | DOUBLE | FLOAT |
+    DECIMAL | NUMERIC |
+    DATETIME | DATE | TIMESTAMP |
+    BLOB | BINARY | TEXT | LONGTEXT
   }
 
   def parseSql(s: String) = parseAll(rep(Table), s) match {
@@ -109,7 +116,7 @@ trait SqlParser extends RegexParsers
 
 }
 
-object SqlParser extends SqlParser with Differ with LaxEqualizer
+object SqlParser extends SqlParser with Differ
 
 trait Differ { self: SqlParser =>
   def diff(before: Table, after: Table): Option[Diff] = {
@@ -134,13 +141,4 @@ trait Differ { self: SqlParser =>
     else
       Some(Diff(before.name, add, drop, changes, ops))
   }
-}
-
-trait LaxEqualizer { self: SqlParser =>
-  def equal(x: DataType, y: DataType) = x.hashCode == y.hashCode
-}
-
-trait StrictEqualizer { self: SqlParser =>
-  def equal(x: DataType, y: DataType) =
-    x.hashCode == y.hashCode && x.fields == y.fields
 }

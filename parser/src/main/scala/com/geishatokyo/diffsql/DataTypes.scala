@@ -1,125 +1,72 @@
 package com.geishatokyo.diffsql
 
-sealed trait DataType {
-  val fields: Any
-}
-
 trait DataTypes { self: SqlParser =>
-
-  def equal(x: DataType, y: DataType): Boolean
-  trait Equalizer { self: DataType =>
-    override def equals(x: Any) = x match {
-      case t: DataType => equal(t, this)
-      case _ => false
-    }
-  }
+ 
+  sealed trait DataType
 
   object DataType {
 
-    trait Parser extends self.Parser[DataType] {
-      val Length = """\d+""".r ^^ (_.toInt)
-      val Charset =
-        "CHARACTER".i ~ "SET".i ~> value ^^ ("CHARACTER SET " + _)
-      val parser: self.Parser[DataType]
-      def apply(input: Input) = parse(parser, input)
+    val charset = "CHARACTER".i ~ "SET".i ~> value ^^ ("CHARACTER SET " + _)
+    val length = Apply("""\d+""".r) ^^ (_.toInt)
+
+    abstract class Simple extends SelfParser[DataType] {
+      val value: DataType
+      def parser = className(getClass).dropRight(1).i ^^^ value
+    }
+    trait Self extends DataType { self: Simple =>
+      val value = this
     }
 
-    abstract class Integral(name: String) extends Parser {
-      val parser = name.i ~> opt(Apply(Length)) ^^ (length =>
-        new DataType with Equalizer {
-          val fields = length
-          override def hashCode = Int##
-          override def toString =
-            name + length.map("(" + _ + ")").getOrElse("")
-        })
+    trait Constructor extends SelfParser[DataType] {
+      def apply(length: Option[Int]): DataType
+      def parser = toString.i ~> opt(length) ^^ apply
     }
 
-    case object Bit extends Integral("BIT")
-    case object Bool extends Integral("BOOL")
-    case object Boolean extends Integral("BOOLEAN")
-    case object TinyInt extends Integral("TINYINT")
-    case object SmallInt extends Integral("SMALLINT")
-    case object MediumInt extends Integral("MEDIUMINT")
-    case object Integer extends Integral("INTEGER")
-    case object Int extends Integral("INT")
-    case object BigInt extends Integral("BIGINT")
-
-    abstract class Binary(name: String) extends Parser {
-      val parser = name.i ~> Apply(Length) ^^ (length =>
-        new DataType with Equalizer {
-          val fields = length
-          override def hashCode = Binary##
-          override def toString = name + "(" + length + ")"
-        })
+    trait Sized {
+      val length: Option[Int]
+      override def toString = className(getClass) + length.map("(" + _ + ")").getOrElse("")
     }
 
-    case object Binary extends Binary("BINARY")
-    case object VarBinary extends Binary("VARBINARY")
+    case object BOOLEAN extends Simple with Self
 
-    abstract class Character(name: String) extends Parser {
-      val parser = name.i ~> Apply(Length) ~ opt(Charset) ^^ {
-        case length ~ charset => new DataType with Equalizer {
-          val fields = (length, charset)
-          override def hashCode = Char##
-          override def toString = name+"("+length+")"+charset.getOrElse("")
-        }
-      }
+    case object INT extends Constructor with DataType {
+      def apply(length: Option[Int]) = this
+    }
+    case object INTEGER extends Simple { val value = INT }
+
+    case object BIGINT extends Constructor with DataType {
+      def apply(length: Option[Int]) = this
     }
 
-    case object Char extends Character("CHAR")
-    case object VarChar extends Character("VARCHAR")
-
-    abstract class Real(name: String) extends Parser {
-      val parser = name.i ~> opt(Apply((Length <~ ",") ~ Length)) ^^ (length =>
-        new DataType with Equalizer {
-          val fields = length
-          override def hashCode = Real##
-          override def toString = length match {
-            case Some(a ~ b) => name+"("+a+","+b+")"
-            case None => name
-          }
-        })
+    case class CHAR(length: Option[Int]) extends DataType with Sized
+    case object CHAR extends Constructor {
+      override def parser = super.parser <~ opt(charset)
     }
-
-    case object Real extends Real("REAL")
-    case object Double extends Real("DOUBLE")
-    case object Float extends Real("FLOAT")
-
-    case object Decimal extends Real("DECIMAL")
-    case object Numeric extends Real("NUMERIC")
-
-    abstract class Text(name: String) extends Parser {
-      val parser = name.i ~> opt(Charset) ^^ (charset =>
-        new DataType with Equalizer {
-          val fields = charset
-          override def hashCode = Text##
-          override def toString = name + charset.getOrElse("")
-        }
-      )
+    case class VARCHAR(length: Option[Int]) extends DataType with Sized
+    case object VARCHAR extends Constructor {
+      override def parser = super.parser <~ opt(charset)
     }
+    case object UUID extends Simple { val value = CHAR(Some(36)) }
 
-    case object TinyText extends Text("TINYTEXT")
-    case object Text extends Text("TEXT")
-    case object MediumText extends Text("MEDIUMTEXT")
-    case object LongText extends Text("LONGTEXT")
+    case object FLOAT extends Simple with Self
+    case object REAL extends Simple { val value = FLOAT }
+    case object DOUBLE extends Simple with Self
 
-    abstract class Simple(name: String) extends Parser { self =>
-      val parser = name.i ^^^ new DataType {
-        val fields = ()
-        override def hashCode = self.hashCode
-        override def toString = self.name
-      }
+    case object DECIMAL extends Simple with Self
+    case object NUMERIC extends Simple { val value = DECIMAL }
+
+    case object DATE extends Simple with Self
+
+    case object TIMESTAMP extends Simple with Self
+    case object DATETIME extends Simple { val value = TIMESTAMP }
+
+    case object BLOB extends Simple with Self
+    case object BINARY extends Simple { val value = BLOB }
+
+    case object TEXT extends Simple with Self
+    case object LONGTEXT extends Simple with Self {
+      override def parser = super.parser <~ opt(charset)
     }
-
-    case object DateTime extends Simple("DATETIME")
-    case object Date extends Simple("DATE")
-    case object TimeStamp extends Simple("TIMESTAMP")
-    case object Time extends Simple("TIME")
-    case object Year extends Simple("YEAR")
-    case object TinyBlob extends Simple("TINYBLOB")
-    case object Blob extends Simple("BLOB")
-    case object MediumBlob extends Simple("MEDIUMBLOB")
-    case object LongBlob extends Simple("LONGBLOB")
 
   }
 
