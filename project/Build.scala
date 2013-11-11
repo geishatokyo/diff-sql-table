@@ -6,6 +6,8 @@ object DiffSqlBuild extends Build {
   val defaultSettings = Project.defaultSettings ++ Seq(
     organization := "com.geishatokyo.tools",
     version := "0.1-SNAPSHOT",
+    scalaVersion := "2.10.3",
+    crossScalaVersions := Seq("2.9.2","2.10.3"),
     scalacOptions <++= (scalaVersion) map { v =>
       if (v startsWith "2.9")
         Seq()
@@ -13,7 +15,8 @@ object DiffSqlBuild extends Build {
         Seq(
           "-feature",
           "-language:postfixOps",
-          "-language:implicitConversions"
+          "-language:implicitConversions",
+          "-language:reflectiveCalls"
         )
     }
   )
@@ -28,8 +31,14 @@ object DiffSqlBuild extends Build {
     id = "diff-sql-table-parser",
     base = file("parser"),
     settings = defaultSettings ++ Seq(
-      scalaVersion := "2.9.2",
-      libraryDependencies += scalatest
+      libraryDependencies += scalatest,
+      libraryDependencies <++= (scalaVersion)(sv => {
+        if(sv.startsWith("2.10")){
+          Seq("org.scala-lang" % "scala-reflect" % sv)
+        }else{
+          Seq()
+        }
+      })
     )
   )
 

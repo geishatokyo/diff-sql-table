@@ -17,6 +17,7 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
     SqlParser.parseSql(sample3)
     SqlParser.parseSql(sample4)
     SqlParser.parseSql(sample5)
+    SqlParser.parseSql(sample6)
     SqlParser.parseSql(mysqlDocSample)
   }
 
@@ -125,6 +126,26 @@ PRIMARY KEY (`id`),
 UNIQUE KEY `KEY_MusicInfo_musicHash` (`musicHash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 """
+
+  val sample6 = """
+create table Information (
+    endDate datetime not null,
+    url varchar(128) not null,
+    urlBtn varchar(128) not null,
+    thumbnail varchar(128) not null,
+    id bigint primary key not null auto_increment,
+    message varchar(640) not null,
+    title varchar(128) not null,
+    pushed boolean default false not null,
+    beginDate datetime not null
+  );
+create table PushInformation (
+    endDate datetime not null,
+    id bigint primary key not null,
+    message varchar(128) not null,
+    pushed boolean default false not null,
+    beginDate datetime not null
+  );"""
 
   val mysqlDocSample = """CREATE TABLE pet (
 name VARCHAR(20),
