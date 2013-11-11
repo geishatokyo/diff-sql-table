@@ -65,12 +65,38 @@ trait SqlParser extends RegexParsers
     DateTime | Date | TimeStamp | Time | Year |
     TinyBlob | Blob | MediumBlob | LongBlob
   }
+  
+  def createDefs = rep(Table | CreateKey.CreateIndex)
 
-  def parseSql(s: String) = parseAll(rep(Table), s) match {
-    case Success(result, _) => result
+  trait CreateDefinition
+
+  def parseSql(s: String) = parseAll(createDefs, s) match {
+    case Success(result, _) => aggregateIndex(result)
     case nosuccess: NoSuccess =>
       throw new RuntimeException(nosuccess.toString)
   }
+  
+  /**
+   * インデックスをテーブル定義の中に入れ込む
+   */
+  def aggregateIndex(createDefinitions : List[CreateDefinition]) = {
+    val indexes = createDefinitions.collect({
+      case key : CreateKey => key
+    }).groupBy(_.tableName)
+    
+    val tables = createDefinitions.collect({
+      case table : Table => {
+        indexes.get(table.name) match{
+          case Some(indexes) => {
+            Table(table.name,table.columns ++ indexes.map(_.toKeyInTableDef),table.options)
+          }
+          case None => table
+        }
+      }
+    })
+    tables
+  }
+  
 
   def diff(before: Table, after: Table): Option[Diff]
 

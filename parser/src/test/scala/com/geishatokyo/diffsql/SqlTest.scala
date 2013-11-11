@@ -17,7 +17,6 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
     SqlParser.parseSql(sample3)
     SqlParser.parseSql(sample4)
     SqlParser.parseSql(sample5)
-    SqlParser.parseSql(sample6)
     SqlParser.parseSql(mysqlDocSample)
   }
 
@@ -33,6 +32,14 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
     assert(result.get.drop.size === 1, result)
     assert(result.get.modify.size === 1, result)
   }
+  
+  "parser" should "marge create index definition into table" in {
+    val d = SqlParser.parseSql(withCreateIndexStatement)
+    
+    assert(d.size === 2,d)
+    
+  }
+  
 
   "primary key and unique key" should "be abstracted from sql" in {
     val coffee1 = """CREATE TABLE `coffees` (
@@ -127,16 +134,11 @@ UNIQUE KEY `KEY_MusicInfo_musicHash` (`musicHash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 """
 
-  val sample6 = """
+  val withCreateIndexStatement = """
 create table Information (
-    endDate datetime not null,
     url varchar(128) not null,
-    urlBtn varchar(128) not null,
-    thumbnail varchar(128) not null,
     id bigint primary key not null auto_increment,
-    message varchar(640) not null,
     title varchar(128) not null,
-    pushed boolean default false not null,
     beginDate datetime not null
   );
 create table PushInformation (
@@ -145,7 +147,10 @@ create table PushInformation (
     message varchar(128) not null,
     pushed boolean default false not null,
     beginDate datetime not null
-  );"""
+  );
+create index idxf5f20dbb on Information (beginDate,title); 
+create unique index idx3894324 on Information (beginDate,url); 
+"""
 
   val mysqlDocSample = """CREATE TABLE pet (
 name VARCHAR(20),

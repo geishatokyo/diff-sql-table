@@ -2,7 +2,7 @@ package com.geishatokyo.diffsql
 
 trait Tables { self: SqlParser =>
 
-  case class Table(name: Name, columns: Set[Definition], options: Set[TableOption]) { self =>
+  case class Table(name: Name, columns: Set[Definition], options: Set[TableOption]) extends CreateDefinition { self =>
     def create = new Result {
       val name = self.name
       override def toString = columns.mkString("CREATE TABLE " + name + " ( \n  ", ",\n  ", "\n);")
@@ -32,5 +32,6 @@ trait Tables { self: SqlParser =>
         case name ~ defs ~ opts => Table(name, expand(defs.toSet), opts.toSet)
       }
   }
+  
 
 }

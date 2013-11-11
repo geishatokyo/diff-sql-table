@@ -16,10 +16,10 @@ trait ColumnOptions { self: SqlParser =>
     case object AutoIncrement extends Parser("AUTO_INCREMENT")
     case object NotNull extends Parser("NOT NULL", "NOT".i ~ "NULL".i)
     case object PrimaryKey extends Parser("PRIMARY KEY", opt("PRIMARY".i) ~ "KEY".i) with Key {
-      def create(name: String) = Key.Primary(Set(name))
+      def create(name: String) = Key.Primary(Seq(name))
     }
     case object UniqueKey extends Parser("UNIQUE KEY", "UNIQUE".i ~ opt("KEY".i)) with Key {
-      def create(name: String) = Key.Unique(None, Set(name))
+      def create(name: String) = Key.Unique(None, Seq(name))
     }
     case class Default(value: String) extends ColumnOption{
       override def toString() = "DEFAULT " + value
