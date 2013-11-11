@@ -150,6 +150,7 @@ create table PushInformation (
   );
 create index idxf5f20dbb on Information (beginDate,title); 
 create unique index idx3894324 on Information (beginDate,url); 
+alter table Information add constraint TAccessTokenCPK unique(title,beginDate);
 """
 
   val mysqlDocSample = """CREATE TABLE pet (

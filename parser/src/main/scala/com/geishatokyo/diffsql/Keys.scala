@@ -41,10 +41,22 @@ trait Keys { self: SqlParser =>
   }
   
   object CreateKey{
-    object CreateIndex extends SelfParser[CreateKey] {
+  
+    def CreateIndex = SimpleCreateIndex | AlterTableAddUnique 
+    
+    object SimpleCreateIndex extends SelfParser[CreateKey] {
       val parser = ("CREATE".i ~> opt("UNIQUE".i) <~ "INDEX".i) ~ value ~ ("ON".i ~> value) ~ ("(" ~> repsep(value,",") <~ ")") <~ opt(";") ^^ {
         case isUnique ~ indexName ~ tableName ~ columns => {
           CreateKey(tableName,indexName,columns.map(Name.apply),isUnique.isDefined)
+        }
+      }
+    }
+    
+    object AlterTableAddUnique extends SelfParser[CreateKey]{
+      val parser = "ALTER".i ~ "TABLE".i ~> value ~ ("ADD".i ~ "CONSTRAINT".i ~> 
+        value) ~ ("UNIQUE".i ~ "(" ~> repsep(value,",") <~ ")" ~ opt(";")) ^^ {
+        case tableName ~ indexName ~ columns => {
+          CreateKey(tableName,indexName,columns.map(Name.apply),true)
         }
       }
     }
