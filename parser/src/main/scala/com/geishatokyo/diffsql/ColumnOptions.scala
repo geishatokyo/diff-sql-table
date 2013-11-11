@@ -21,7 +21,9 @@ trait ColumnOptions { self: SqlParser =>
     case object UniqueKey extends Parser("UNIQUE KEY", "UNIQUE".i ~ opt("KEY".i)) with Key {
       def create(name: String) = Key.Unique(None, Set(name))
     }
-    case class Default(value: String) extends ColumnOption
+    case class Default(value: String) extends ColumnOption{
+      override def toString() = "DEFAULT " + value
+    }
     case object Default extends SelfParser[ColumnOption] {
       val parser = "DEFAULT".i ~> value ^^ Default.apply
     }
