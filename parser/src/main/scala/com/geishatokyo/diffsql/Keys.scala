@@ -2,7 +2,7 @@ package com.geishatokyo.diffsql
 
 trait Keys { self: SqlParser =>
 
-  abstract class Key(name: String, columns: Seq[Name], index: Option[Name] = None) extends Definition {
+  abstract class Key(val name: String, columns: Seq[Name], index: Option[Name] = None) extends Definition {
     override def toString =
       name + " " + index.getOrElse("") + " " + columns.mkString(" ")
   }
@@ -32,10 +32,18 @@ trait Keys { self: SqlParser =>
       def apply(index: Option[Name], columns: Seq[Name]) = Primary(columns)
     }
 
-    case class Unique(index: Option[Name], columns: Seq[Name]) extends Key("UNIQUE KEY", columns, index)
+    case class Unique(index: Option[Name], columns: Seq[Name]) extends Key("UNIQUE KEY", columns, index){
+      override def toString() = {
+        "CONSTRAINT UNIQUE " + index.getOrElse("") + "(" + columns.mkString(",") + ")"
+      }
+    }
     case object Unique extends Parser("UNIQUE".i ~ "KEY".i)
 
-    case class Index(index: Option[Name], columns: Seq[Name]) extends Key("KEY", columns, index)
+    case class Index(index: Option[Name], columns: Seq[Name]) extends Key("KEY", columns, index){
+      override def toString() = {
+        "INDEX " + index.getOrElse("") + "(" + columns.mkString(",") + ")"
+      }
+    }
     case object Index extends Parser("KEY".i | "INDEX".i)
 
   }

@@ -22,15 +22,17 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
 
   "difference of sqls" should "be only option" in {
     val result = SqlParser.diff(mysql, slick)
-    assert(result.isEmpty, result)
+    // Engin is changed
+    assert(result.diffs.size === 1, result) 
   }
 
   "difference of sqls" should "be name and supid" in {
     val result = SqlParser.diff(slick, fake)
     assert(result.nonEmpty, result)
-    assert(result.get.add.size === 2, result)
-    assert(result.get.drop.size === 1, result)
-    assert(result.get.modify.size === 1, result)
+    val diff = result.diffs(0)
+    assert(diff.add.size === 2, result)
+    assert(diff.drop.size === 2, result)
+    assert(diff.modify.size === 1, result)
   }
   
   "parser" should "marge create index definition into table" in {
@@ -54,6 +56,60 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
 )"""
     val result = SqlParser.diff(coffee1, coffee2)
     assert(result.isEmpty, result)
+  }
+  
+  
+  val multiSqlBefore = """CREATE TABLE User (
+    id bigint PRIMARY KEY AUTO_INCREMENT,
+    name Varchar(200)
+  );
+  CREATE TABLE Role(
+    id bigint PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(20),
+    category INTEGER
+  );
+  CREATE TABLE AAAA(
+    id bigint
+  );
+  CREATE INDEX idx_name ON User (name);
+  """
+  
+   val multiSqlAfter = """CREATE TABLE User (
+    id bigint PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(200),
+    age INTEGER
+  );
+  CREATE TABLE Role(
+    id bigint PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(20),
+    categoryId INTEGER
+  );
+  CREATE TABLE BBBB(
+    id bigint
+  );
+  CREATE INDEX idx_name ON User (name,age);
+  """
+  
+  "multiple table defs" should "get all changes" in {
+  
+    import SqlParser._
+    val diffs = SqlParser.diff(multiSqlAfter,multiSqlBefore)
+    
+    assert(diffs.createTables.size === 1,diffs.createTables)
+    assert(diffs.createTables(0).name === "BBBB",diffs.createTables)
+    assert(diffs.dropTables.size === 1,diffs.dropTables)
+    assert(diffs.dropTables(0).name === "AAAA",diffs.dropTables)
+    
+    assert(diffs.diffs.size === 2,diffs.diffs)
+    val diffForUser = diffs.diffs.find(_.name == "User").get
+    assert(diffForUser.add.size === 2,diffForUser) // column age and index idx_name
+    assert(diffForUser.drop.size === 1,diffForUser) // index idx_name
+    assert(diffForUser.modify.size === 0 ,diffForUser)
+    
+    val diffForRole = diffs.diffs.find(_.name == "Role").get
+    assert(diffForRole.add.size === 1,diffForRole) // column categoryId
+    assert(diffForRole.drop.size === 1,diffForRole) // column category
+    assert(diffForRole.modify.size === 0,diffForRole)
   }
 
 }
@@ -161,5 +217,8 @@ sex CHAR(1),
 birth DATE,
 death DATE
 )"""
+
+
+
 
 }

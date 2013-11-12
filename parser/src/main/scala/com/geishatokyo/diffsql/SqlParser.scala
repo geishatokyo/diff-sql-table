@@ -9,10 +9,12 @@ trait Result {
 case class Name(name: String) {
   override def equals(x: Any) = x match {
     case n: Name => name.equalsIgnoreCase(n.name)
+    case str : String => name.equalsIgnoreCase(str)
     case _ => false
   }
   override def hashCode = name.toLowerCase##
   override def toString = name
+  
 }
 object Name {
   implicit def nameToString(name: Name) = name.name
@@ -98,10 +100,30 @@ trait SqlParser extends RegexParsers
   }
   
 
-  def diff(before: Table, after: Table): Option[Diff]
+  def diff(after: Table, before: Table): Option[Diff]
 
-  def diff(after: String, before: String): Option[Diff] =
-    diff(parseSql(before).head, parseSql(after).head)
+  def diff(after: String, before: String): Diffs = {
+    
+    val beforeTables = parseSql(before).map(t => t.name -> t).toMap
+    val afterTables = parseSql(after).map(t => t.name -> t).toMap
+    
+    val addTables = afterTables.collect({
+      case p if !beforeTables.contains(p._1) => p._2
+    }).toList
+    val dropTables = beforeTables.collect({
+      case p if !afterTables.contains(p._1) => p._2
+    }).toList
+    
+    val diffs = afterTables.flatMap( {
+      case (tableName,aTable) => beforeTables.get(tableName) match{
+        case Some(bTable) => {
+          diff(bTable,aTable)
+        }
+        case None => None
+      }
+    }).toList
+    Diffs(addTables,dropTables,diffs)
+  }
 
   def genSql(a: String, b: String): Set[Result] = {
     val before = parseSql(b)
@@ -117,20 +139,33 @@ trait SqlParser extends RegexParsers
       }
     }
   }
-
+  case class Diffs(createTables : List[Table],dropTables : List[Table], diffs : List[Diff]){
+    def isEmpty = createTables.size == 0 && dropTables.size == 0 && diffs.size == 0
+    def nonEmpty = !isEmpty
+  }
+  
   case class Diff(
     name: Name,
     add: Set[Definition],
-    drop: Set[Name],
+    drop: Set[Definition],
     modify: Set[Column],
     options: Set[TableOption])
       extends Result {
     override def toString = {
       val ADD = add.map("ADD " +)
-      val DROP = drop.map("DROP " +)
+      val DROP = drop.map(d => "DROP " + (d match{
+        case column : Column => "COLUMNE " + column.name.toString
+        case key : Key => "KEY " + key.name.toString 
+      }))
       val MODIFY = modify.map("MODIFY " +)
       "ALTER TABLE " + name + " " + (ADD ++ DROP ++ MODIFY ++ options).mkString(",") + ";"
     }
+    
+    def isEmpty = {
+      modify.isEmpty && add.isEmpty && drop.isEmpty && options.isEmpty
+    }
+    
+    
   }
 
 }
@@ -138,27 +173,28 @@ trait SqlParser extends RegexParsers
 object SqlParser extends SqlParser with Differ with LaxEqualizer
 
 trait Differ { self: SqlParser =>
-  def diff(before: Table, after: Table): Option[Diff] = {
+  def diff(after: Table, before: Table): Option[Diff] = {
     val changes =
     before.columns.collect {
       case b: Column => after.columns.collect {
         case a: Column if a.name == b.name && a.dataType != b.dataType => b
       }
     }.flatten
-    def remove(defs: Set[Definition]) =
-    defs filter {
-      case c: Column => !changes.map(_.name).contains(c.name)
-      case _ => true
+    def remove(defs: Set[Definition]) = {
+      defs filter {
+        case c: Column => !changes.map(_.name).contains(c.name)
+        case _ => true
+      }
     }
     val add = remove(before.columns diff after.columns)
-    val drop = remove(after.columns diff before.columns).collect {
-      case c: Column => c.name
-    }
+    val drop = remove(after.columns diff before.columns)
     val ops = before.options diff after.options
-    if (changes.isEmpty && add.isEmpty && drop.isEmpty && ops.isEmpty)
-      None
-    else
-      Some(Diff(before.name, add, drop, changes, ops))
+    
+    val diff = Diff(before.name, add, drop, changes, ops)
+    if(!diff.isEmpty){
+      Some(diff)
+    }else None
+    
   }
 }
 
