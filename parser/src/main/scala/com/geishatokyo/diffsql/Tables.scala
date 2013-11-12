@@ -11,6 +11,8 @@ trait Tables { self: SqlParser =>
       val name = self.name
       override def toString = "DROP TABLE " + name + ";"
     }
+    
+    
   }
 
   object Table extends SelfParser[Table] {

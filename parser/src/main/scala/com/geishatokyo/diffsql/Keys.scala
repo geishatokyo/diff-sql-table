@@ -2,9 +2,13 @@ package com.geishatokyo.diffsql
 
 trait Keys { self: SqlParser =>
 
-  abstract class Key(val name: String, columns: Seq[Name], index: Option[Name] = None) extends Definition {
+  trait Key extends Definition {
+    def keyType : String
+    def columns : Seq[Name]
+    def indexName : Option[Name]
+  
     override def toString =
-      name + " " + index.getOrElse("") + " " + columns.mkString(" ")
+      keyType + " " + indexName.getOrElse("") + " " + columns.mkString(" ")
   }
   
   case class CreateKey(tableName : String,indexName : String ,columns : Seq[Name],unique : Boolean) extends CreateDefinition{
@@ -27,21 +31,27 @@ trait Keys { self: SqlParser =>
     }
     
 
-    case class Primary(columns: Seq[Name]) extends Key("PRIMARY KEY", columns)
+    case class Primary(columns: Seq[Name]) extends Key{
+      
+      def keyType = "KEY"
+      def indexName = None
+    }
     case object Primary extends Parser("PRIMARY".i ~ "KEY".i) {
       def apply(index: Option[Name], columns: Seq[Name]) = Primary(columns)
     }
 
-    case class Unique(index: Option[Name], columns: Seq[Name]) extends Key("UNIQUE KEY", columns, index){
+    case class Unique(indexName: Option[Name], columns: Seq[Name]) extends Key{
+      def keyType = "UNIQUE KEY"
       override def toString() = {
-        "CONSTRAINT UNIQUE " + index.getOrElse("") + "(" + columns.mkString(",") + ")"
+        "CONSTRAINT UNIQUE " + indexName.getOrElse("") + "(" + columns.mkString(",") + ")"
       }
     }
     case object Unique extends Parser("UNIQUE".i ~ "KEY".i)
 
-    case class Index(index: Option[Name], columns: Seq[Name]) extends Key("KEY", columns, index){
+    case class Index(indexName: Option[Name], columns: Seq[Name]) extends Key{
+      def keyType = "KEY"
       override def toString() = {
-        "INDEX " + index.getOrElse("") + "(" + columns.mkString(",") + ")"
+        "INDEX " + indexName.getOrElse("") + "(" + columns.mkString(",") + ")"
       }
     }
     case object Index extends Parser("KEY".i | "INDEX".i)

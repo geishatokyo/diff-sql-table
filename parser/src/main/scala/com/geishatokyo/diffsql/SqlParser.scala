@@ -155,7 +155,7 @@ trait SqlParser extends RegexParsers
       val ADD = add.map("ADD " +)
       val DROP = drop.map(d => "DROP " + (d match{
         case column : Column => "COLUMNE " + column.name.toString
-        case key : Key => "KEY " + key.name.toString 
+        case key : Key => "KEY " + key.indexName.toString 
       }))
       val MODIFY = modify.map("MODIFY " +)
       "ALTER TABLE " + name + " " + (ADD ++ DROP ++ MODIFY ++ options).mkString(",") + ";"
