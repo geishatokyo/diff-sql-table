@@ -8,7 +8,7 @@ trait Keys { self: SqlParser =>
     def indexName : Option[Name]
   
     override def toString =
-      keyType + " " + indexName.getOrElse("") + " " + columns.mkString(" ")
+      keyType + " " + indexName.getOrElse("") + " " + columns.mkString("(",",",")")
   }
   
   case class CreateKey(tableName : String,indexName : String ,columns : Seq[Name],unique : Boolean) extends CreateDefinition{
@@ -33,7 +33,7 @@ trait Keys { self: SqlParser =>
 
     case class Primary(columns: Seq[Name]) extends Key{
       
-      def keyType = "KEY"
+      def keyType = "PRIMARY KEY"
       def indexName = None
     }
     case object Primary extends Parser("PRIMARY".i ~ "KEY".i) {
@@ -51,7 +51,7 @@ trait Keys { self: SqlParser =>
     case class Index(indexName: Option[Name], columns: Seq[Name]) extends Key{
       def keyType = "KEY"
       override def toString() = {
-        "INDEX " + indexName.getOrElse("") + "(" + columns.mkString(",") + ")"
+        "KEY " + indexName.getOrElse("") + "(" + columns.mkString(",") + ")"
       }
     }
     case object Index extends Parser("KEY".i | "INDEX".i)

@@ -152,12 +152,15 @@ trait SqlParser extends RegexParsers
     options: Set[TableOption])
       extends Result {
     override def toString = {
-      val ADD = add.map("ADD " +)
+      val ADD = add.map(d => "ADD " + (d match {
+        case column : Column => "COLUMN " + column.toString
+        case key : Key => key.toString
+      }))
       val DROP = drop.map(d => "DROP " + (d match{
-        case column : Column => "COLUMNE " + column.name.toString
+        case column : Column => "COLUMN " + column.name.toString
         case key : Key => "KEY " + key.indexName.toString 
       }))
-      val MODIFY = modify.map("MODIFY " +)
+      val MODIFY = modify.map("MODIFY " + _)
       "ALTER TABLE " + name + " " + (ADD ++ DROP ++ MODIFY ++ options).mkString(",") + ";"
     }
     
