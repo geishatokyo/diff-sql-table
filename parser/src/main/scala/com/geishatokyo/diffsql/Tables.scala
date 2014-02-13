@@ -20,12 +20,12 @@ trait Tables { self: SqlParser =>
       case column@Column(name, _, options) =>
         options.collect {
           case key: ColumnOption.Key => key.create(name)
-        } + column.copy(options = options.filter {
+        } :+ column.copy(options = options.filter {
           case _: ColumnOption.Key => false
           case _ => true
         })
       case definition =>
-        Set(definition)
+        List(definition)
     }
     val parser =
       "CREATE".i ~ "TABLE".i ~ opt("IF".i ~ "NOT".i ~ "EXISTS".i) ~>

@@ -117,7 +117,7 @@ trait SqlParser extends RegexParsers
     val diffs = afterTables.flatMap( {
       case (tableName,aTable) => beforeTables.get(tableName) match{
         case Some(bTable) => {
-          diff(bTable,aTable)
+          diff(aTable,bTable)
         }
         case None => None
       }
@@ -133,7 +133,7 @@ trait SqlParser extends RegexParsers
       val a = after.groupBy(_.name).mapValues(_.head)
       ((b get name, a get name): @unchecked) match {
         case (Some(before), Some(after)) =>
-          diff(before, after)
+          diff(after, before)
         case (None, Some(after)) => Some(after.create)
         case (Some(before), None) => Some(before.drop)
       }
@@ -152,16 +152,22 @@ trait SqlParser extends RegexParsers
     options: List[TableOption])
       extends Result {
     override def toString = {
-      val ADD = add.map(d => "ADD " + (d match {
-        case column : Column => "COLUMN " + column.toString
-        case key : Key => key.toString
-      }))
-      val DROP = drop.map(d => "DROP " + (d match{
-        case column : Column => "COLUMN " + column.name.toString
-        case key : Key => "KEY " + key.indexName.toString 
-      }))
+
+      val addColumns = add.collect({
+        case column : Column => "ADD COLUMN " + column.toString
+      })
+      val addKeys = add.collect({
+        case key : Key => "ADD " + key.toString
+      })
+
+      val dropKeys = drop.collect({
+        case key : Key => "DROP KEY " + key.indexName
+      })
+      val dropColumns = drop.collect({
+        case column : Column => "DROP COLUMN " + column.name
+      })
       val MODIFY = modify.map("MODIFY " + _)
-      "ALTER TABLE " + name + " " + (ADD ++ DROP ++ MODIFY ++ options).mkString(",") + ";"
+      "ALTER TABLE " + name + " " + (MODIFY ++ addColumns ++ addKeys ++ dropKeys ++ dropColumns ++ options).mkString(",") + ";"
     }
     
     def isEmpty = {
@@ -178,9 +184,9 @@ object SqlParser extends SqlParser with Differ with LaxEqualizer
 trait Differ { self: SqlParser =>
   def diff(after: Table, before: Table): Option[Diff] = {
     val changes =
-    before.columns.collect {
-      case b: Column => after.columns.collect {
-        case a: Column if a.name == b.name && a.dataType != b.dataType => b
+    after.columns.collect {
+      case a: Column => before.columns.collect {
+        case b: Column if a.name == b.name && a.dataType != b.dataType => b
       }
     }.flatten
     def remove(defs: List[Definition]) = {
@@ -189,9 +195,9 @@ trait Differ { self: SqlParser =>
         case _ => true
       }
     }
-    val add = remove(before.columns diff after.columns)
-    val drop = remove(after.columns diff before.columns)
-    val ops = before.options diff after.options
+    val add = remove(after.columns diff before.columns)
+    val drop = remove(before.columns diff after.columns)
+    val ops = after.options diff before.options
     
     val diff = Diff(before.name, add, drop, changes, ops)
     if(!diff.isEmpty){
