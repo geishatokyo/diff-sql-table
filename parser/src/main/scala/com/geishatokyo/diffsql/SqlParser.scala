@@ -38,7 +38,7 @@ trait SqlParser extends RegexParsers
 
   def Apply[A](p: Parser[A]) = """\(""".r ~> p <~ """\)""".r
 
-  val value = """[\w`]+""".r
+  val value = ("`" ~> """[\w]+""".r <~ "`") | """[\w]+""".r
 
   trait SelfParser[A] extends Parser[A] {
     val parser: Parser[A]

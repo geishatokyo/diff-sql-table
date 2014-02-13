@@ -74,7 +74,7 @@ class ParserSpec extends FlatSpec with ShouldMatchers { self =>
   CREATE INDEX idx_name ON User (name);
   """
   
-   val multiSqlAfter = """CREATE TABLE User (
+   val multiSqlAfter = """CREATE TABLE `User` (
     id bigint PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(200),
     age INTEGER
