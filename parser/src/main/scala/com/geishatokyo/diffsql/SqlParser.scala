@@ -186,7 +186,7 @@ trait Differ { self: SqlParser =>
     val changes =
     after.columns.collect {
       case a: Column => before.columns.collect {
-        case b: Column if a.name == b.name && a.dataType != b.dataType => b
+        case b: Column if a.name == b.name && a.dataType != b.dataType => a
       }
     }.flatten
     def remove(defs: List[Definition]) = {
