@@ -146,10 +146,10 @@ trait SqlParser extends RegexParsers
   
   case class Diff(
     name: Name,
-    add: Set[Definition],
-    drop: Set[Definition],
-    modify: Set[Column],
-    options: Set[TableOption])
+    add: List[Definition],
+    drop: List[Definition],
+    modify: List[Column],
+    options: List[TableOption])
       extends Result {
     override def toString = {
       val ADD = add.map(d => "ADD " + (d match {
@@ -183,7 +183,7 @@ trait Differ { self: SqlParser =>
         case a: Column if a.name == b.name && a.dataType != b.dataType => b
       }
     }.flatten
-    def remove(defs: Set[Definition]) = {
+    def remove(defs: List[Definition]) = {
       defs filter {
         case c: Column => !changes.map(_.name).contains(c.name)
         case _ => true
