@@ -7,7 +7,7 @@ object DiffSqlBuild extends Build {
     organization := "com.geishatokyo.tools",
     version := "0.2-SNAPSHOT",
     scalaVersion := "2.10.3",
-    crossScalaVersions := Seq("2.9.2","2.10.3"),
+    crossScalaVersions := Seq("2.10.3"),
     scalacOptions <++= (scalaVersion) map { v =>
       if (v startsWith "2.9")
         Seq()

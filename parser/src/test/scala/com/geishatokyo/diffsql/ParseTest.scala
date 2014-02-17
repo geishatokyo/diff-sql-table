@@ -17,6 +17,13 @@ class ParseTest extends FlatSpec with ShouldMatchers {
 
     println(sqls)
 
+    /*assert(sqls === List("""CREATE TABLE IF NOT EXISTS UserDesc (
+  id INT ,
+  aaa INT
+);""",
+      """ALTER TABLE User ADD COLUMN name VARCHAR(100) ;""",
+      """ALTER TABLE User DROP COLUMN age;""",
+      """ALTER TABLE User ADD  KEY a  (name,gender) ;"""))*/
   }
 
   val afterSQL =

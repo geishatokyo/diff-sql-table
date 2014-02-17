@@ -21,7 +21,7 @@ class MySQLnizer extends SQLnizer {
   ${table.fields.map({
       case c : Column => toColumnDefinition(c)
       case k : Key => toIndexDefinition(k)
-    }).mkString(",\n")}
+    }).mkString(",\n  ")}
 )${table.options.mkString(",\n")};"""
 
   }
