@@ -2,31 +2,51 @@
 
 This library makes alter table sql from 2 create table sql.
 
-# Sample code 
 
 
-## Parsing
+# How to use
 
-```scala
-import com.geishatokyo.diffsql.SqlParser
+    import com.geishatokyo.diffsql._
 
-val createTableStructure = SqlParser.parseSql( yourSql )
-```
+    val builder = new DiffSQLBuilder()
+    val sqlDiff = builder.build()
 
-## Diffing
+    val alterSqls = sqlDiff.diff(afterSql , beforeSql )
 
-```scala
-import com.geishatokyo.diffsql.SqlParser
 
-val diff = SqlParser.diff(oldSql,newSql)
+## Miscs
 
-diff.foreach(println)
-```
+## How to modify diffing algorithm
 
-## Equalizer
+First you implement your com.geishatokyo.diffsql.diff.Differencer.
+Then you set it to builder.
 
-```scala
-import com.geishatokyo.diffsql.{SqlParser,Differ,StrictEqualizer}
+    import com.geishatokyo.diffsql._
 
-val diff = (new SqlParser with Differ with StrictEqualizer).diff(oldSql,newSql)
-```
+    val builder = new DiffSQLBuilder()
+    builder.differencer = new YourOriginalDifferencer()
+    val sqlDiff = builder.build()
+
+    val alterSqls = sqlDiff.diff(afterSql , beforeSql )
+
+## How to modify output sql
+
+you implement your com.geishatokyo.diffsql.SQLnizer
+Then you set it to builder
+
+    import com.geishatokyo.diffsql._
+
+    val builder = new DiffSQLBuilder()
+    builder.sqlnizer = new YourOriginalSQLnizer()
+    val sqlDiff = builder.build()
+
+    val alterSqls = sqlDiff.diff(afterSql , beforeSql )
+
+
+## Process
+
+    SQL(CreateTable,CreateIndex) -SQLParser-> AST -Normalizer-> -Differencer-> Diff -SQLnizer-> SQL(AlterTable)
+
+
+
+
