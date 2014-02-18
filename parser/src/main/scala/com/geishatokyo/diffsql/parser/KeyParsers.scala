@@ -38,7 +38,7 @@ trait KeyParsers { self : SQLParser =>
 
 
     val CreateKeyByCreate = ("CREATE" ~> opt("UNIQUE") <~ "INDEX") ~ name ~ opt(keyAlgorithm) ~ ("ON" ~> name) ~ cols ~ opt(order) <~ opt(";") ^^ {
-      case Some("unique") ~ indexName ~ algo ~ tableName ~ columns ~ order => {
+      case Some(_) ~ indexName ~ algo ~ tableName ~ columns ~ order => {
         CreateKey(tableName,Key.UniqueKey(Some(indexName),columns,order,algo))
       }
       case None ~ indexName ~ algo ~ tableName ~ columns ~ order => {
@@ -46,20 +46,17 @@ trait KeyParsers { self : SQLParser =>
       }
     }
 
-
     val KeyKeywordByAlter = "ADD" ~ opt("CONSTRAINT") ~> opt("UNIQUE") <~ ("KEY" | "INDEX")
     val KeyBodyByAlter = opt(name) ~ opt(keyAlgorithm) ~ cols ~ opt(order)
 
     val CreateKeyByAlter = ("ALTER" ~ "TABLE") ~> name ~ KeyKeywordByAlter ~ KeyBodyByAlter <~ opt(";") ^^ {
-      case tableName ~ Some("unique") ~ (indexName ~ algo ~ columns ~ order) => {
+      case tableName ~ Some(_) ~ (indexName ~ algo ~ columns ~ order) => {
         CreateKey(tableName,Key.UniqueKey(indexName,columns,order,algo))
       }
       case tableName ~ None ~ (indexName ~ algo ~ columns ~ order) => {
         CreateKey(tableName,Key.NormalKey(indexName,columns,order,algo))
       }
-
     }
-
   }
 
   val key : Parser[Key] = {
