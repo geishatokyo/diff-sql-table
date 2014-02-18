@@ -57,7 +57,7 @@ class MySQLnizer extends SQLnizer {
       if(k.keyType == KeyType.PrimaryKey){
         s"ALTER TABLE ${diff.tableName} DROP PRIMARY KEY;"
       }else{
-        s"ALTER TABLE ${diff.tableName} DROP KEY ${k.name};"
+        s"ALTER TABLE ${diff.tableName} DROP KEY ${k.name.get.name};"
       }
     }) :::
     diff.keys.add.map(k => {
