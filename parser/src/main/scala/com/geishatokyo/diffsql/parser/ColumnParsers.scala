@@ -21,7 +21,8 @@ trait ColumnParsers { self : SQLParser with DataTypeParsers =>
       ("DEFAULT" ~> bool ^^ {case d => ColumnOption.Default(ColumnOption.BoolValue(d))}) |
       ("DEFAULT" ~> digits ^^ {case d => ColumnOption.Default(ColumnOption.IntValue(d))}) |
       ("DEFAULT" ~> floats ^^ {case d => ColumnOption.Default(ColumnOption.FloatValue(d))}) |
-        ("DEFAULT" ~> stringLiteral ^^ {case d => ColumnOption.Default(ColumnOption.StringValue(d))})
+        ("DEFAULT" ~> stringLiteral ^^ {case d => ColumnOption.Default(ColumnOption.StringValue(d))}) |
+        ("DEFAULT" ~ "NULL" ^^^ { ColumnOption.Default(ColumnOption.NullValue)})
 
     val CharacterSet =
       (("CHARACTER" ~ "SET") | "CHARSET") ~> value ^^ {

@@ -6,8 +6,8 @@ object DiffSqlBuild extends Build {
   val defaultSettings = Project.defaultSettings ++ Seq(
     organization := "com.geishatokyo.tools",
     version := "0.2-SNAPSHOT",
-    scalaVersion := "2.10.3",
-    crossScalaVersions := Seq("2.10.3"),
+    scalaVersion := "2.11.1",
+    crossScalaVersions := Seq("2.11.1","2.10.4"),
     scalacOptions <++= (scalaVersion) map { v =>
       if (v startsWith "2.9")
         Seq()
@@ -33,9 +33,14 @@ object DiffSqlBuild extends Build {
     settings = defaultSettings ++ Seq(
       libraryDependencies += scalatest,
       libraryDependencies <++= (scalaVersion)(sv => {
-        if(sv.startsWith("2.10")){
+        if(sv.startsWith("2.11")){
+          Seq(
+            "org.scala-lang" % "scala-reflect" % sv,
+            "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
+          )
+        }else if(sv.startsWith("2.10")) {
           Seq("org.scala-lang" % "scala-reflect" % sv)
-        }else{
+        }else {
           Seq()
         }
       })
@@ -50,6 +55,6 @@ object DiffSqlBuild extends Build {
     )
   ) dependsOn parser
 
-  lazy val scalatest = "org.scalatest" %% "scalatest" % "1.9.1" % "test"
+  lazy val scalatest = "org.scalatest" %% "scalatest" % "2.1.7" % "test"
 
 }

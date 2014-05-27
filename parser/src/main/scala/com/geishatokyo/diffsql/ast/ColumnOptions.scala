@@ -38,6 +38,9 @@ object ColumnOption{
   case class BoolValue(value : Boolean) extends Value{
     override def toString: String = value.toString
   }
+  case object NullValue extends Value{
+    override def toString: String = "NULL"
+  }
 
   case object Null extends SimpleCO("NULL")
   case object NotNull extends SimpleCO("NOT NULL")
