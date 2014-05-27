@@ -5,7 +5,7 @@ object DiffSqlBuild extends Build {
 
   val defaultSettings = Project.defaultSettings ++ Seq(
     organization := "com.geishatokyo.tools",
-    version := "0.2-SNAPSHOT",
+    version := "0.3.0-SNAPSHOT",
     scalaVersion := "2.11.1",
     crossScalaVersions := Seq("2.11.1","2.10.4"),
     scalacOptions <++= (scalaVersion) map { v =>

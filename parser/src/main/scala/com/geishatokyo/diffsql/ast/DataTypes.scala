@@ -27,6 +27,11 @@ case class DataType(name : Name, args : List[Int] = Nil){
     }
   }
 }
+object DataType{
+
+  implicit def fromString( simpleType : String) = DataType(simpleType)
+
+}
 
 
 trait DataTypeEquality{

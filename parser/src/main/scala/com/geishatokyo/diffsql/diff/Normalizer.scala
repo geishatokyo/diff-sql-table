@@ -12,56 +12,64 @@ import com.geishatokyo.diffsql.ast.Column
  * Created by takeshita on 14/02/17.
  */
 trait Normalizer {
-  def normalize( definitions : List[Definition]) : List[Table]
+  def normalize( tables : List[Table]) : List[Table]
+
+  def +(other : Normalizer) : Normalizer = {
+    AndNormalizer(this,other)
+  }
+
+}
+case class AndNormalizer( first : Normalizer,second : Normalizer) extends Normalizer{
+  override def normalize(tables : List[Table]): List[Table] = {
+    second.normalize( first.normalize(tables) )
+  }
 }
 
-object Normalizer extends Normalizer{
+object Normalizer{
 
-  def normalize(definitions: List[Definition]): List[Table] = {
-    val tables = aggregateKey(definitions)
-    expandColumnIndex(tables)
-  }
-
-  /**
-   * CreateIndex構文を、CreateTable文の中に入れ込む
-   * @param definitions
-   * @return
-   */
-  def aggregateKey(definitions : List[Definition]) = {
-    val keys = definitions.collect({
-      case k : CreateKey => k
-    }).groupBy(_.table)
-    val tables = definitions.collect({
-      case t : Table => t
-    })
-
-    tables.map( t => {
-      keys.get(t.name) match{
-        case Some(indexes) => t ++ indexes.map(_.key)
-        case None => t
-      }
-    })
-  }
 
   /**
    * カラムに付けられたIndex情報をカラム情報と、Index情報に分離
-   * @param tables
-   * @return
    */
-  def expandColumnIndex(tables : List[Table]) = {
-    tables.map(t => {
-      val indexedColumns = t.fields.collect({
-        case c : Column if c.getKeyType.isDefined => c
+  object SeparateColumnIndex extends Normalizer {
+    def normalize(tables : List[Table]) = {
+      tables.map(t => {
+        val indexedColumns = t.fields.collect({
+          case c : Column if c.getKeyType.isDefined => c
+        })
+        indexedColumns.foldLeft(t)({
+          case (table,column) => {
+            val keyType = column.getKeyType.get
+            val key = Key(keyType,List(column.name))
+            table -+ (column -> (column - column.getKeyOption.get)) + key
+          }
+        })
       })
-      indexedColumns.foldLeft(t)({
-        case (table,column) => {
-          val keyType = column.getKeyType.get
-          val key = Key(keyType,List(column.name))
-          table -+ (column -> (column - column.getKeyOption.get)) + key
-        }
-      })
-    })
+    }
+  }
 
+  /**
+   * NotNullがデフォルトで付けられるカラムにNotNullを付ける
+   * @param types
+   * @param eq
+   */
+  case class AddNotNullAsDefault(types : DataType*)(implicit eq : DataTypeEquality) extends Normalizer{
+
+    def normalize(tables : List[Table]) = {
+      tables.map(table => {
+        table.copy(fields = table.fields.map({
+          case c@Column(name,dataType,options)
+              if types.exists(t => t === dataType) => {
+            if(c.options.contains(ColumnOption.NotNull) || c.options.contains(ColumnOption.Null)) {
+              c
+            }else {
+              c.copy(options = ColumnOption.NotNull :: c.options)
+            }
+          }
+          case c => c
+        }))
+      })
+    }
 
   }
 

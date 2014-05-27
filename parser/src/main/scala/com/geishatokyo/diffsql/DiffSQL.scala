@@ -1,20 +1,21 @@
 package com.geishatokyo.diffsql
 
-import com.geishatokyo.diffsql.diff.{Normalizer, Differencer}
+import com.geishatokyo.diffsql.diff.{Aggregator, Normalizer, Differencer}
 import com.geishatokyo.diffsql.parser.SQLParser
 
 /**
  * Created by takeshita on 14/02/17.
  */
 class DiffSQL(sqlParser : SQLParser,
+              aggregator : Aggregator,
               normalizer : Normalizer,
               differencer : Differencer,
               sqlnizer : SQLnizer) {
 
   def diff(after : String, before : String) : List[String] = {
 
-    val afterDefs = normalizer.normalize(sqlParser.parseSql(after))
-    val beforeDefs = normalizer.normalize(sqlParser.parseSql(before))
+    val afterDefs = normalizer.normalize(aggregator.aggregate(sqlParser.parseSql(after)))
+    val beforeDefs = normalizer.normalize(aggregator.aggregate(sqlParser.parseSql(before)))
 
     val createTables = afterDefs.filter(t => {
       !beforeDefs.exists(_.name == t.name)

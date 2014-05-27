@@ -10,7 +10,7 @@ class ParseTest extends FlatSpec with ShouldMatchers {
 
   "test" should "be" in {
 
-    val builder = new DiffSQLBuilder()
+    val builder = DiffSQLBuilder.MySQLBuilder
     val sqlDiff = builder.build()
 
     val sqls = sqlDiff.diff(afterSQL,beforeSQL)

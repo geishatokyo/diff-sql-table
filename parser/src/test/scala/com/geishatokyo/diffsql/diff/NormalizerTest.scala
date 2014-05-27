@@ -14,23 +14,8 @@ import com.geishatokyo.diffsql.ast.Column
  */
 class NormalizerTest extends FlatSpec with ShouldMatchers {
 
-  "Default normalizer" should "aggregate index" in {
 
-    val defs = List(
-      Table("User",List(Column("id",DataType("Long",Nil),Nil)),Nil),
-      CreateKey("User",Key.NormalKey(Some("hoge"),List("id"),None,None))
-    )
-
-    val tables = Normalizer.normalize(defs)
-
-    assert(tables === List(Table("User",List(
-      Column("id",DataType("Long",Nil),Nil),
-      Key.NormalKey(Some("hoge"),List("id"),None,None)
-    ),Nil)))
-
-  }
-
-  "Default normalizer" should "expand column index" in {
+  "SeparateColumnIndex normalizer" should "expand column index" in {
 
     val defs = List(
       Table("User",List(
@@ -39,7 +24,7 @@ class NormalizerTest extends FlatSpec with ShouldMatchers {
       ),Nil)
     )
 
-    val tables = Normalizer.expandColumnIndex(defs)
+    val tables = Normalizer.SeparateColumnIndex.normalize(defs)
 
     assert(tables === List(
       Table("User",List(
@@ -52,5 +37,31 @@ class NormalizerTest extends FlatSpec with ShouldMatchers {
 
   }
 
+  "AddNotNullAsDefault normalizer" should "add 'not null' option to specific data type fields" in {
+
+    implicit val eq = DataTypeEquality.OnlyName
+
+    val defs = List(
+      Table("AddNull",List(
+        Column("id",DataType("Long",Nil),List(ColumnOption.PrimaryKey)),
+        Column("withoutNotNull",DataType("BOOLEAN"),List()),
+        Column("withNotNull",DataType("BOOLEAN"),List(ColumnOption.NotNull)),
+        Column("withNull",DataType("BOOLEAN"),List(ColumnOption.Null))
+      ),Nil)
+    )
+
+    val tables = Normalizer.AddNotNullAsDefault("Boolean").normalize(defs)
+
+    assert(tables === List(
+      Table("AddNull",List(
+        Column("id",DataType("Long",Nil),List(ColumnOption.PrimaryKey)),
+        Column("withoutNotNull",DataType("BOOLEAN"),List(ColumnOption.NotNull)),
+        Column("withNotNull",DataType("BOOLEAN"),List(ColumnOption.NotNull)),
+        Column("withNull",DataType("BOOLEAN"),List(ColumnOption.Null))
+      ),Nil)
+    ))
+
+
+  }
 
 }

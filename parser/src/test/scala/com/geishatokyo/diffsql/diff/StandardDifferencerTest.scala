@@ -2,7 +2,10 @@ package com.geishatokyo.diffsql.diff
 
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
-import com.geishatokyo.diffsql.ast.{ColumnOption, Column, DataType, Table}
+import com.geishatokyo.diffsql.ast._
+import com.geishatokyo.diffsql.ast.DataType
+import com.geishatokyo.diffsql.ast.Table
+import com.geishatokyo.diffsql.ast.Column
 
 /**
  * Created by takeshita on 14/02/17.
@@ -11,10 +14,12 @@ class StandardDifferencerTest extends FlatSpec with ShouldMatchers {
 
   "StandardDifferencer" should "diff columns" in {
 
+    implicit val eq = DataTypeEquality.OnlyName
+
     val table1 = Table("User",List(Column("id",DataType("BIGINT"),List(ColumnOption.PrimaryKey)),Column("name",DataType("INT"))))
     val table2 = Table("user",List(Column("id",DataType("BigInt")),Column("gender",DataType("INT"))))
 
-    implicit val differencer  =new StandardDifferencer()
+    implicit val differencer  = new StandardDifferencer()
 
     val diff = table1 -- table2
 

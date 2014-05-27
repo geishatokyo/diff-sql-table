@@ -8,7 +8,7 @@ This library makes alter table sql from 2 create table sql.
 
     import com.geishatokyo.diffsql._
 
-    val builder = new DiffSQLBuilder()
+    val builder = DiffSQLBuilder.MySQLBuilder
     val sqlDiff = builder.build()
 
     val alterSqls = sqlDiff.diff(afterSql , beforeSql )
@@ -23,7 +23,7 @@ Then you set it to builder.
 
     import com.geishatokyo.diffsql._
 
-    val builder = new DiffSQLBuilder()
+    val builder = DiffSQLBuilder.MySQLBuilder
     builder.differencer = new YourOriginalDifferencer()
     val sqlDiff = builder.build()
 
@@ -36,7 +36,7 @@ Then you set it to builder
 
     import com.geishatokyo.diffsql._
 
-    val builder = new DiffSQLBuilder()
+    val builder = DiffSQLBuilder.MySQLBuilder
     builder.sqlnizer = new YourOriginalSQLnizer()
     val sqlDiff = builder.build()
 
@@ -45,7 +45,7 @@ Then you set it to builder
 
 ## Process
 
-    SQL(CreateTable,CreateIndex) -SQLParser-> AST -Normalizer-> -Differencer-> Diff -SQLnizer-> SQL(AlterTable)
+    SQL(CreateTable,CreateIndex) -SQLParser-> AST -Aggregator-> -Normalizer-> -Differencer-> Diff -SQLnizer-> SQL(AlterTable)
 
 
 

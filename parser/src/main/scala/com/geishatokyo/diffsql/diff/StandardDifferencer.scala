@@ -6,10 +6,7 @@ import com.geishatokyo.diffsql.ast.Column
 /**
  * Created by takeshita on 14/02/17.
  */
-class StandardDifferencer extends Differencer {
-
-
-  def dataTypeEquality: DataTypeEquality = DataTypeEquality.OnlyName
+class StandardDifferencer()(implicit val dataTypeEquality: DataTypeEquality) extends Differencer {
 
   def diffColumns(after: List[Column], before: List[Column])(implicit dataTypeEquality: DataTypeEquality): DiffSet[Column] = {
     val add = after.filter(c => !before.exists(_.name == c.name))
