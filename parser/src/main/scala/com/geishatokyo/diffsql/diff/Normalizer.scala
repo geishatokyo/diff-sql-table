@@ -1,6 +1,6 @@
 package com.geishatokyo.diffsql.diff
 
-import com.geishatokyo.diffsql.Definition
+import com.geishatokyo.diffsql.{Name, Definition}
 import com.geishatokyo.diffsql.ast._
 import com.geishatokyo.diffsql.ast.ColumnOption.PrimaryKey
 import com.geishatokyo.diffsql.ast.CreateKey
@@ -71,6 +71,31 @@ object Normalizer{
       })
     }
 
+  }
+
+  /**
+   * MySQLのSHOW CREATE TABLEで帰ってくるKey情報は、
+   * 作成時に無名のIndexにしていた場合、最初の絡むの名前がつけられるため、
+   * その差分を吸収するため無名のIndexの名前を補完する
+   */
+  case class CompleteKeyName() extends Normalizer{
+    override def normalize(tables: List[Table]): List[Table] = {
+      tables.map(t => {
+
+        t.copy(fields = t.fields.map(f => f match{
+          case Key.UniqueKey(None,columns,order,algorithm) =>{
+            Key.UniqueKey(Some(columns(0).name),columns,order,algorithm)
+          }
+          case Key.NormalKey(None,columns,order,algorithm) =>{
+            Key.NormalKey(Some(columns(0).name),columns,order,algorithm)
+          }
+          case Key.FullTextKey(None,columns) =>{
+            Key.FullTextKey(Some(columns(0).name),columns)
+          }
+          case _ => f
+        }))
+      })
+    }
   }
 
 

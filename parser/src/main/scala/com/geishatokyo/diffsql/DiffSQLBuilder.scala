@@ -34,7 +34,9 @@ object DiffSQLBuilder{
      * MySQLでは、BOOLEANのカラムに対して自動でNotNullオプションが追加されるため、
      * その挙動と合わせるためにNormalize時にNotNullを付加するようにしてある
      */
-    var normalizer : Normalizer = Normalizer.SeparateColumnIndex + Normalizer.AddNotNullAsDefault(DataType("BOOLEAN"))
+    var normalizer : Normalizer = Normalizer.SeparateColumnIndex +
+      Normalizer.AddNotNullAsDefault(DataType("BOOLEAN")) +
+      Normalizer.CompleteKeyName()
     var differencer : Differencer = new StandardDifferencer()
     var sqlnizer : SQLnizer = new MySQLnizer()
 
