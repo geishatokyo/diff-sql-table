@@ -23,6 +23,8 @@ class KeyParserTest extends FlatSpec with ShouldMatchers {
     assert(IndexInTableParser.testParse("key hoge (name, age)") === Key.NormalKey(Some(Name("hoge")),List("name","age"),None,None))
     assert(IndexInTableParser.testParse("constraint Unique fuga (name, age) ASC") === Key.UniqueKey(Some(Name("fuga")),List("name","age"),Some(KeyOrder.Asc),None))
     assert(IndexInTableParser.testParse("constraint PRIMARY KEY USING HASH (name, age) DESC") === Key.PrimaryKey(List("name","age"),Some(KeyOrder.Desc),Some(KeyAlgorithm.Hash)))
+    assert(IndexInTableParser.testParse("fullText (article,title)") === Key.FullTextKey(None,List(Name("article"),Name("title"))))
+    assert(IndexInTableParser.testParse("fullText index only_article (article)") === Key.FullTextKey(Some("only_article"),List(Name("article"))))
 
   }
 
@@ -38,5 +40,6 @@ class KeyParserTest extends FlatSpec with ShouldMatchers {
 
 
   }
+
 
 }

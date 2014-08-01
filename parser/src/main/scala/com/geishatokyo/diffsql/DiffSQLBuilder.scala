@@ -2,7 +2,7 @@ package com.geishatokyo.diffsql
 
 import com.geishatokyo.diffsql.diff.{Aggregator, Normalizer, StandardDifferencer, Differencer}
 import com.geishatokyo.diffsql.parser.SQLParser
-import com.geishatokyo.diffsql.mysql.{MySQLnizer, MySQLParser}
+import com.geishatokyo.diffsql.mysql.{MySQLDataTypeSynonym, MySQLnizer, MySQLParser}
 import com.geishatokyo.diffsql.ast.{DataType, DataTypeEquality}
 
 /**
@@ -27,7 +27,7 @@ object DiffSQLBuilder{
 
   object MySQLBuilder extends DiffSQLBuilder{
 
-    implicit val dataTypeEquality : DataTypeEquality = DataTypeEquality.OnlyName
+    implicit object dataTypeEquality extends DataTypeEquality.OnlyName with MySQLDataTypeSynonym
     var sqlParser : SQLParser = new MySQLParser
     var aggregator : Aggregator = Aggregator
     /**

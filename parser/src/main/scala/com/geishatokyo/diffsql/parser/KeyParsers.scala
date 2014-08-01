@@ -30,6 +30,10 @@ trait KeyParsers { self : SQLParser =>
       case name ~ algo ~ columnNames ~ order => Key.NormalKey(name ,columnNames,order,algo)
     }
 
+    val FullTextKey = "FULLTEXT" ~ opt("INDEX") ~> opt(name) ~ cols ^^ {
+      case name ~ columnNames => Key.FullTextKey(name,columnNames)
+    }
+
 
   }
 
@@ -62,7 +66,7 @@ trait KeyParsers { self : SQLParser =>
   val key : Parser[Key] = {
     import KeyInTableDef._
 
-    PrimaryKey | UniqueKey | NormalKey
+    PrimaryKey | UniqueKey | NormalKey | FullTextKey
   }
 
   val createIndex = {

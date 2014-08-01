@@ -3,10 +3,7 @@ package com.geishatokyo.diffsql.mysql
 import com.geishatokyo.diffsql.{ SQLnizer}
 import com.geishatokyo.diffsql.ast._
 import com.geishatokyo.diffsql.diff.Diff
-import com.geishatokyo.diffsql.ast.Key.{NormalKey, UniqueKey, PrimaryKey}
-import com.geishatokyo.diffsql.ast.Key.PrimaryKey
-import com.geishatokyo.diffsql.ast.Key.UniqueKey
-import com.geishatokyo.diffsql.ast.Key.NormalKey
+import com.geishatokyo.diffsql.ast.Key._
 import com.geishatokyo.diffsql.ast.Table
 import com.geishatokyo.diffsql.diff.Diff
 import com.geishatokyo.diffsql.ast.Column
@@ -70,12 +67,13 @@ class MySQLnizer extends SQLnizer {
   def toIndexDefinition( key : Key) = {
 
     val prefix = key match{
-      case pk : PrimaryKey => "PRIMARY "
-      case uk : UniqueKey => "UNIQUE "
-      case nk : NormalKey => ""
+      case pk : PrimaryKey => "PRIMARY KEY"
+      case uk : UniqueKey => "UNIQUE KEY"
+      case nk : NormalKey => "KEY"
+      case fk : FullTextKey => "FULLTEXT"
     }
 
-    s"${prefix} KEY ${key.name.map(_.name).getOrElse("")} ${key.algorithm.map("USING " + _).getOrElse("")} ${key.columns.map(_.name).mkString("(",",",")")} ${key.order.map(_.toString).getOrElse("")}"
+    s"${prefix}${key.name.map(" " + _.name).getOrElse("")}${key.algorithm.map(" USING " + _).getOrElse("")} ${key.columns.map(_.name).mkString("(",",",")")} ${key.order.map(_.toString).getOrElse("")}"
 
   }
 

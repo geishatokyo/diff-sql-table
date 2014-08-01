@@ -123,6 +123,14 @@ object Key{
     val name = None
     val keyType: KeyType.Value = KeyType.PrimaryKey
   }
+
+  case class FullTextKey(name : Option[Name],columns : List[Name]) extends Key{
+    val keyType : KeyType.Value = KeyType.FullText
+
+    override def algorithm: Option[KeyAlgorithm.Value] = None
+
+    override def order: Option[KeyOrder.Value] = None
+  }
 }
 
 object KeyType extends Enumeration{
@@ -130,6 +138,7 @@ object KeyType extends Enumeration{
   val PrimaryKey = Value
   val Unique = Value
   val Normal = Value
+  val FullText = Value
 
 }
 
