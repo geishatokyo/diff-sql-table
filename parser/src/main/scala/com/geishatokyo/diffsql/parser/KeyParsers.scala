@@ -30,7 +30,7 @@ trait KeyParsers { self : SQLParser =>
       case name ~ algo ~ columnNames ~ order => Key.NormalKey(name ,columnNames,order,algo)
     }
 
-    val FullTextKey = "FULLTEXT" ~ opt("INDEX") ~> opt(name) ~ cols ^^ {
+    val FullTextKey = "FULLTEXT" ~ opt("INDEX" | "KEY") ~> opt(name) ~ cols ^^ {
       case name ~ columnNames => Key.FullTextKey(name,columnNames)
     }
 
