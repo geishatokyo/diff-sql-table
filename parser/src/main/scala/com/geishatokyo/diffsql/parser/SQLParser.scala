@@ -31,8 +31,8 @@ trait SQLParser extends RegexParsers{
 
 
   def bool : Parser[Boolean] = "true" ^^^ { true } | "false" ^^^ { false }
-  def digits : Parser[Int] = """\d+""".r ^^ { case v => v.toInt}
-  def floats : Parser[Double] = """\d+(\.\d)?""".r ^^ { case v => v.toDouble}
+  def digits : Parser[Int] = """-?\d+""".r ^^ { case v => v.toInt}
+  def floats : Parser[Double] = """-?\d+\.\d+""".r ^^ { case v => v.toDouble}
   def nonLiteralChars : Parser[String] = """[a-zA-Z0-9_]+""".r
   def literalChars : Parser[String] = """\w+""".r
 

@@ -36,4 +36,10 @@ class ColumnParserTest extends FlatSpec with ShouldMatchers {
     assert("hoge TEXT character set utf8mb4", Column("hoge",DataType("TEXT",Nil),List(Charset("utf8mb4"))))
   }
 
+  "Minus value" should "be set as default" in {
+
+    assert("hoge INT DEFAULT -1", Column("hoge",DataType("INT",Nil),List(Default(-1))))
+    assert("hoge DOUBLE DEFAULT -0.12", Column("hoge",DataType("DOUBLE",Nil),List(Default(-0.12))))
+  }
+
 }

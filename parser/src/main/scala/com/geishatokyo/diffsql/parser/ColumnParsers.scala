@@ -18,9 +18,9 @@ trait ColumnParsers { self : SQLParser with DataTypeParsers =>
     val UniqueKey = "UNIQUE" ~ opt("KEY") ^^^ {ColumnOption.UniqueKey}
 
     val Default =
-      ("DEFAULT" ~> bool ^^ {case d => ColumnOption.Default(ColumnOption.BoolValue(d))}) |
-      ("DEFAULT" ~> digits ^^ {case d => ColumnOption.Default(ColumnOption.IntValue(d))}) |
-      ("DEFAULT" ~> floats ^^ {case d => ColumnOption.Default(ColumnOption.FloatValue(d))}) |
+        ("DEFAULT" ~> bool ^^ {case d => ColumnOption.Default(ColumnOption.BoolValue(d))}) |
+          ("DEFAULT" ~> floats ^^ {case d => ColumnOption.Default(ColumnOption.FloatValue(d))}) |
+          ("DEFAULT" ~> digits ^^ {case d => ColumnOption.Default(ColumnOption.IntValue(d))}) |
         ("DEFAULT" ~> stringLiteral ^^ {case d => ColumnOption.Default(ColumnOption.StringValue(d))}) |
         ("DEFAULT" ~ "NULL" ^^^ { ColumnOption.Default(ColumnOption.NullValue)})
 
