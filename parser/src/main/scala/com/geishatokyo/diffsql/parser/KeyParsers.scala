@@ -1,5 +1,6 @@
 package com.geishatokyo.diffsql.parser
 
+import com.geishatokyo.diffsql.Name
 import com.geishatokyo.diffsql.ast.{CreateKey, KeyAlgorithm, KeyOrder, Key}
 
 /**
@@ -50,15 +51,23 @@ trait KeyParsers { self : SQLParser =>
       }
     }
 
-    val KeyKeywordByAlter = "ADD" ~ opt("CONSTRAINT") ~> opt("UNIQUE") <~ ("KEY" | "INDEX")
+    def constraintSymbol = opt("CONSTRAINT" ~ opt(value)) ^^ {
+      case Some(_ ~ Some(symbol)) => Some(symbol)
+      case _ => None
+    }
+
+    val KeyKeywordByAlter = "ADD" ~> constraintSymbol ~ opt("UNIQUE" | "PRIMARY" ~ "KEY") <~ opt("KEY" | "INDEX")
     val KeyBodyByAlter = opt(name) ~ opt(keyAlgorithm) ~ cols ~ opt(order)
 
     val CreateKeyByAlter = ("ALTER" ~ "TABLE") ~> name ~ KeyKeywordByAlter ~ KeyBodyByAlter <~ opt(";") ^^ {
-      case tableName ~ Some(_) ~ (indexName ~ algo ~ columns ~ order) => {
-        CreateKey(tableName,Key.UniqueKey(indexName,columns,order,algo))
+      case tableName ~ (symbol ~ Some("unique")) ~ (indexName ~ algo ~ columns ~ order) => {
+        CreateKey(tableName,Key.UniqueKey(indexName.orElse(symbol.map(s => Name(s))),columns,order,algo))
       }
-      case tableName ~ None ~ (indexName ~ algo ~ columns ~ order) => {
-        CreateKey(tableName,Key.NormalKey(indexName,columns,order,algo))
+      case tableName ~ (symbol ~ Some("primary" ~ "key")) ~ (indexName ~ algo ~ columns ~ order) => {
+        CreateKey(tableName,Key.PrimaryKey(columns,order,algo))
+      }
+      case tableName ~ (symbol ~ None) ~ (indexName ~ algo ~ columns ~ order) => {
+        CreateKey(tableName,Key.NormalKey(indexName.orElse(symbol.map(s => Name(s))),columns,order,algo))
       }
     }
   }

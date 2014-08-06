@@ -41,5 +41,10 @@ class KeyParserTest extends FlatSpec with ShouldMatchers {
 
   }
 
+  "IndexParser" should "parse with symbol" in {
+    assert(StandAloneIndexParser.testParse("ALTER table user add Constraint Symbol unique(name,age)") === CreateKey("user",Key.UniqueKey(Some("Symbol"),List("name","age"),None,None)))
+
+  }
+
 
 }

@@ -24,7 +24,7 @@ trait SQLParser extends RegexParsers{
         Success(source.subSequence(start, j).toString, in.drop(j - offset))
       else  {
         val found = if (start == source.length()) "end of source" else "`"+source.charAt(start)+"'"
-        Failure("`"+s+"' expected but "+found+" found", in.drop(start - offset))
+        Failure("`"+s+"' is expected but "+found+" is found", in.drop(start - offset))
       }
     }
   }
