@@ -1,6 +1,8 @@
 import sbt._
 import sbt.Keys._
 
+import scala.xml.XML
+
 object DiffSqlBuild extends Build {
 
   val defaultSettings = Project.defaultSettings ++ Seq(
@@ -44,10 +46,20 @@ object DiffSqlBuild extends Build {
         }else {
           Seq()
         }
-      })
+      }),
+      publishMavenStyle := true,
+      pomIncludeRepository := { _ => false },
+      pomExtra := loadPomExtra()
     )
   )
 
+  /**
+   *
+   * @return
+   */
+  def loadPomExtra() = {
+    XML.loadFile( file( "./project/pomExtra.xml")).child
+  }
 
   lazy val scalatest = "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 
