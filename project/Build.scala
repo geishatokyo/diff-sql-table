@@ -26,7 +26,7 @@ object DiffSqlBuild extends Build {
     id = "diff-sql-table",
     base = file("."),
     settings = defaultSettings
-  ) aggregate(parser, plugin)
+  ) aggregate(parser)
 
   lazy val parser = Project(
     id = "diff-sql-table-parser",
@@ -48,13 +48,6 @@ object DiffSqlBuild extends Build {
     )
   )
 
-  lazy val plugin = Project(
-    id = "diff-sql-table-plugin",
-    base = file("plugin"),
-    settings = defaultSettings ++ Seq(
-      sbtPlugin := true
-    )
-  ) dependsOn parser
 
   lazy val scalatest = "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 
