@@ -1,13 +1,13 @@
 package com.geishatokyo.diffsql.parser
 
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import com.geishatokyo.diffsql.ast.DataType
 
 /**
  * Created by takeshita on 14/02/17.
  */
-class DataTypeParserTest extends FlatSpec with ShouldMatchers {
+class DataTypeParserTest extends FlatSpec with Matchers {
 
   object DataTypeParser extends SQLParserForTest[DataType] with DataTypeParsers{
     def rootParser = dataType

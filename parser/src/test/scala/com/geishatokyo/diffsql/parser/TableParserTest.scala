@@ -1,7 +1,6 @@
 package com.geishatokyo.diffsql.parser
 
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{Matchers, FlatSpec}
 import com.geishatokyo.diffsql.ast._
 import com.geishatokyo.diffsql.ast.DataType
 import com.geishatokyo.diffsql.ast.Table
@@ -12,7 +11,7 @@ import com.geishatokyo.diffsql.ast.ColumnOption._
 /**
  * Created by takeshita on 14/02/17.
  */
-class TableParserTest extends FlatSpec with ShouldMatchers {
+class TableParserTest extends FlatSpec with Matchers {
 
   val parser = new MySQLParser()
 

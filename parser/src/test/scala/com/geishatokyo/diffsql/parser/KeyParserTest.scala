@@ -2,14 +2,14 @@ package com.geishatokyo.diffsql.parser
 
 import com.geishatokyo.diffsql.ast.Key.{Reference, ForeignKey}
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import com.geishatokyo.diffsql.ast._
 import com.geishatokyo.diffsql.{Name}
 
 /**
  * Created by takeshita on 14/02/17.
  */
-class KeyParserTest extends FlatSpec with ShouldMatchers {
+class KeyParserTest extends FlatSpec with Matchers {
 
 
   object IndexInTableParser extends SQLParserForTest[Key] with KeyParsers{

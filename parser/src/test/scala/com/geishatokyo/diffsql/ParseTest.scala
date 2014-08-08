@@ -1,12 +1,12 @@
 package com.geishatokyo.diffsql
 
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * Created by takeshita on 14/02/18.
  */
-class ParseTest extends FlatSpec with ShouldMatchers {
+class ParseTest extends FlatSpec with Matchers {
 
   "test" should "be" in {
 

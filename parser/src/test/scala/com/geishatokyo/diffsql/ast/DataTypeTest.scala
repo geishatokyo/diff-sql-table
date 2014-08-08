@@ -1,12 +1,12 @@
 package com.geishatokyo.diffsql.ast
 
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * Created by takeshita on 14/02/14.
  */
-class DataTypeTest extends FlatSpec with ShouldMatchers {
+class DataTypeTest extends FlatSpec with Matchers {
 
 
   "OnlyName" should "return true case insensitive/ignore length" in {

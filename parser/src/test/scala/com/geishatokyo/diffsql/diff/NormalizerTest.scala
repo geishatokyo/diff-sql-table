@@ -1,7 +1,7 @@
 package com.geishatokyo.diffsql.diff
 
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import com.geishatokyo.diffsql.ast._
 import com.geishatokyo.diffsql.ast.ColumnOption.NormalKey
 import com.geishatokyo.diffsql.ast.DataType
@@ -12,7 +12,7 @@ import com.geishatokyo.diffsql.ast.Column
 /**
  * Created by takeshita on 14/02/17.
  */
-class NormalizerTest extends FlatSpec with ShouldMatchers {
+class NormalizerTest extends FlatSpec with Matchers {
 
 
   "SeparateColumnIndex normalizer" should "expand column index" in {

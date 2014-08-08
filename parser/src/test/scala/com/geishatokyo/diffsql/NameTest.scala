@@ -1,12 +1,12 @@
 package com.geishatokyo.diffsql
 
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * Created by takeshita on 2014/08/01.
  */
-class NameTest extends FlatSpec with ShouldMatchers  {
+class NameTest extends FlatSpec with Matchers  {
 
 
   "Name" should "match case insensitive" in {

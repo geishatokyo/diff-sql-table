@@ -1,7 +1,7 @@
 package com.geishatokyo.diffsql.parser
 
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import com.geishatokyo.diffsql.ast.{DataType, Column}
 import com.geishatokyo.diffsql.ast.ColumnOption._
 
@@ -9,7 +9,7 @@ import com.geishatokyo.diffsql.ast.ColumnOption._
  *
  * Test for ColumnParser
  */
-class ColumnParserTest extends FlatSpec with ShouldMatchers {
+class ColumnParserTest extends FlatSpec with Matchers {
 
   object ColumnParser extends SQLParserForTest[Column] with ColumnParsers with DataTypeParsers{
     def rootParser = column

@@ -3,12 +3,12 @@ package com.geishatokyo.diffsql.mysql
 import com.geishatokyo.diffsql.Name
 import com.geishatokyo.diffsql.ast._
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * Created by takeshita on 2014/08/01.
  */
-class MySQLnizerTest extends FlatSpec with ShouldMatchers  {
+class MySQLnizerTest extends FlatSpec with Matchers  {
 
 
   "MySQLnizer" should "generate create table sql from Table" in {
