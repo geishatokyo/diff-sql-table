@@ -1,9 +1,10 @@
 package com.geishatokyo.diffsql.parser
 
+import com.geishatokyo.diffsql.ast.Key.{Reference, ForeignKey}
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
-import com.geishatokyo.diffsql.ast.{CreateKey, KeyAlgorithm, KeyOrder, Key}
-import com.geishatokyo.diffsql.Name
+import com.geishatokyo.diffsql.ast._
+import com.geishatokyo.diffsql.{Name}
 
 /**
  * Created by takeshita on 14/02/17.
@@ -44,6 +45,21 @@ class KeyParserTest extends FlatSpec with ShouldMatchers {
   "IndexParser" should "parse with symbol" in {
     assert(StandAloneIndexParser.testParse("ALTER table user add Constraint Symbol unique(name,age)") === CreateKey("user",Key.UniqueKey(Some("Symbol"),List("name","age"),None,None)))
 
+  }
+
+  "Foreign key in create table" should "be parsed" in {
+    assert(IndexInTableParser.testParse("FOREIGN key ArticleFK (articleId) REFERENCES Article(id)") ===
+      Key.ForeignKey(Some("ArticleFK"),List[Name]("articleId"),Reference("Article",List("id"),None,None)))
+
+
+    assert(IndexInTableParser.testParse("Constraint symbol FOREIGN key ArticleFK (articleId) REFERENCES Article(id) ON DELETE NO ACTION") ===
+      Key.ForeignKey(Some("ArticleFK"),List[Name]("articleId"),Reference("Article",List("id"),Some(ReferenceOption.NoAction),None)))
+  }
+
+  "Foreign key in alter table" should "be parsed" in {
+    assert(StandAloneIndexParser.testParse("ALTER table user add FOREIGN KEY fk (name,age) REFERENCES User (id)") ===
+      CreateKey("user",ForeignKey(Some("fk"),List[Name]("name","age"),Reference("User",List[Name]("id"),None,None)))
+    )
   }
 
 

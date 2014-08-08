@@ -49,7 +49,6 @@ class MySQLnizer extends SQLnizer {
   }
 
   def keys(diff : Diff) = {
-
     diff.keys.remove.map(k => {
       if(k.keyType == KeyType.PrimaryKey){
         s"ALTER TABLE ${diff.tableName} DROP PRIMARY KEY;"
@@ -60,17 +59,16 @@ class MySQLnizer extends SQLnizer {
     diff.keys.add.map(k => {
       s"ALTER TABLE ${diff.tableName} ADD ${toIndexDefinition(k)};"
     })
-
   }
 
 
   def toIndexDefinition( key : Key) = {
-
     val prefix = key match{
       case pk : PrimaryKey => "PRIMARY KEY"
       case uk : UniqueKey => "UNIQUE KEY"
       case nk : NormalKey => "KEY"
       case fk : FullTextKey => "FULLTEXT"
+      case fk : ForeignKey => "FOREIGN KEY"
     }
 
     s"${prefix}${key.name.map(" " + _.name).getOrElse("")}${key.algorithm.map(" USING " + _).getOrElse("")} ${key.columns.map(_.name).mkString("(",",",")")} ${key.order.map(_.toString).getOrElse("")}"

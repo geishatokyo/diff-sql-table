@@ -1,7 +1,8 @@
 package com.geishatokyo.diffsql.parser
 
 import com.geishatokyo.diffsql.Name
-import com.geishatokyo.diffsql.ast.{CreateKey, KeyAlgorithm, KeyOrder, Key}
+import com.geishatokyo.diffsql.ast.Key.{ Reference}
+import com.geishatokyo.diffsql.ast._
 
 /**
  * Created by takeshita on 14/02/17.
@@ -11,9 +12,26 @@ trait KeyParsers { self : SQLParser =>
 
 
   object KeyDef {
+
+    def constraintSymbol = opt("CONSTRAINT" ~ opt(value)) ^^ {
+      case Some(_ ~ Some(symbol)) => Some(symbol)
+      case _ => None
+    }
+
     val order = ("ASC" ^^^ { KeyOrder.Asc}) | ("DESC" ^^^ {KeyOrder.Desc})
     val keyAlgorithm = ("USING" ~ "BTREE" ^^^ {KeyAlgorithm.BTree}) | ("USING" ~ "HASH" ^^^ {KeyAlgorithm.Hash})
     val cols = "(" ~> repsep(name,",") <~ ")"
+
+    val referenceOption = "RESTRICT" ^^^ {ReferenceOption.Restrict} |
+      "CASCADE" ^^^ {ReferenceOption.Cascade}  |
+      "SET" ~ "NULL" ^^^ {ReferenceOption.Restrict}  |
+      "NO" ~ "ACTION" ^^^ {ReferenceOption.NoAction}
+
+    val referenceDefinition = "REFERENCES" ~> name ~ cols ~ opt(onDelete) ~ opt(onUpdate) ^^ {
+      case tableName ~ cols ~ onDelete ~ onUpdate => Reference(tableName,cols,onDelete,onUpdate)
+    }
+    def onDelete = "ON" ~ "DELETE" ~> referenceOption
+    def onUpdate = "ON" ~ "CREATE" ~> referenceOption
   }
 
 
@@ -35,6 +53,10 @@ trait KeyParsers { self : SQLParser =>
       case name ~ columnNames => Key.FullTextKey(name,columnNames)
     }
 
+    val ForeignKey = opt("CONSTRAINT" ~ opt(value)) ~ "FOREIGN" ~ "KEY" ~> opt(name) ~ cols ~ referenceDefinition ^^ {
+      case name ~ columns ~ ref => Key.ForeignKey(name,columns,ref)
+    }
+
 
   }
 
@@ -51,31 +73,41 @@ trait KeyParsers { self : SQLParser =>
       }
     }
 
-    def constraintSymbol = opt("CONSTRAINT" ~ opt(value)) ^^ {
-      case Some(_ ~ Some(symbol)) => Some(symbol)
-      case _ => None
+
+    def KeyKeywordByAlter = "ADD" ~> constraintSymbol ~ opt("UNIQUE" | "PRIMARY" ~ "KEY") <~ opt("KEY" | "INDEX")
+    def KeyBodyByAlter = opt(name) ~ opt(keyAlgorithm) ~ cols ~ opt(order)
+
+    val CreateKeyByAlter = ("ALTER" ~ "TABLE") ~> (CreatePrimaryKeyByAlter | CreateUniqueKeyByAlter | CreateNormalIndexByAlter | CreateForeignKeyByAlter)
+
+    def CreatePrimaryKeyByAlter = (name <~ "ADD") ~ (constraintSymbol <~ "PRIMARY" ~ "KEY") ~ opt(keyAlgorithm) ~ cols ^^ {
+      case tableName ~ symbol ~ algo ~ columns => {
+        CreateKey(tableName,Key.PrimaryKey(columns,None,algo))
+      }
     }
-
-    val KeyKeywordByAlter = "ADD" ~> constraintSymbol ~ opt("UNIQUE" | "PRIMARY" ~ "KEY") <~ opt("KEY" | "INDEX")
-    val KeyBodyByAlter = opt(name) ~ opt(keyAlgorithm) ~ cols ~ opt(order)
-
-    val CreateKeyByAlter = ("ALTER" ~ "TABLE") ~> name ~ KeyKeywordByAlter ~ KeyBodyByAlter <~ opt(";") ^^ {
-      case tableName ~ (symbol ~ Some("unique")) ~ (indexName ~ algo ~ columns ~ order) => {
+    def CreateUniqueKeyByAlter = (name <~ "ADD") ~ (constraintSymbol <~ "UNIQUE" ~ opt("KEY" | "INDEX")) ~ KeyBodyByAlter ^^ {
+      case tableName ~ symbol ~ (indexName ~ algo ~ columns ~ order) => {
         CreateKey(tableName,Key.UniqueKey(indexName.orElse(symbol.map(s => Name(s))),columns,order,algo))
       }
-      case tableName ~ (symbol ~ Some("primary" ~ "key")) ~ (indexName ~ algo ~ columns ~ order) => {
-        CreateKey(tableName,Key.PrimaryKey(columns,order,algo))
-      }
-      case tableName ~ (symbol ~ None) ~ (indexName ~ algo ~ columns ~ order) => {
-        CreateKey(tableName,Key.NormalKey(indexName.orElse(symbol.map(s => Name(s))),columns,order,algo))
+    }
+    def CreateNormalIndexByAlter = (name <~ "ADD") ~ (constraintSymbol <~ opt("KEY" | "INDEX")) ~ KeyBodyByAlter ^^ {
+      case tableName ~ symbol ~ (indexName ~ algo ~ columns ~ order) => {
+        CreateKey(tableName, Key.NormalKey(indexName.orElse(symbol.map(s => Name(s))), columns, order, algo))
       }
     }
+    def CreateForeignKeyByAlter = (name <~ "ADD") ~ (constraintSymbol <~ "FOREIGN" ~ "KEY") ~ opt(name) ~ cols ~ referenceDefinition ^^ {
+      case tableName ~ symbol ~ name ~ columns ~ ref => {
+        CreateKey(tableName, Key.ForeignKey(name.orElse(symbol.map(s => Name(s))),columns,ref))
+      }
+    }
+
+
+
   }
 
   val key : Parser[Key] = {
     import KeyInTableDef._
 
-    PrimaryKey | UniqueKey | NormalKey | FullTextKey
+    PrimaryKey | UniqueKey | NormalKey | FullTextKey | ForeignKey
   }
 
   val createIndex = {
