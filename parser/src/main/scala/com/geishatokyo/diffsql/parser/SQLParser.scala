@@ -43,7 +43,7 @@ trait SQLParser extends RegexParsers{
     case n => Name(n)
   }
 
-  def stringLiteral = ("'" ~> """\w+""" <~ "'")
+  def stringLiteral = ("'" ~> """[^']*""".r <~ "'") | ("\"" ~> """[^"]*""".r <~ "\"")
 
   def createDefs : Parser[List[Definition]]
 

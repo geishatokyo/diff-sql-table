@@ -20,7 +20,7 @@ class ColumnParserTest extends FlatSpec with Matchers {
     assert(c == expected,"ParsedColumn:" + c)
   }
 
-  "ColumParser" should "parse simple one" in{
+  "ColumnParser" should "parse simple one" in{
     assert("hoge INT", Column("hoge",DataType("INT",Nil),Nil))
     assert("hoge TExt", Column("hoge",DataType("TEXt",Nil),Nil))
     assert("`hoge` INT(2)", Column("hoge",DataType("INT",List(2)),Nil))
@@ -40,6 +40,12 @@ class ColumnParserTest extends FlatSpec with Matchers {
 
     assert("hoge INT DEFAULT -1", Column("hoge",DataType("INT",Nil),List(Default(-1))))
     assert("hoge DOUBLE DEFAULT -0.12", Column("hoge",DataType("DOUBLE",Nil),List(Default(-0.12))))
+  }
+
+  "ColumnParser" should "parse date time default" in {
+
+    assert("hoge DATETIME DEFAULT '2014-01-01 00:00:00'", Column("hoge",DataType("DATETIME",Nil),List(Default("2014-01-01 00:00:00"))))
+    assert("""hoge DATETIME DEFAULT "2014-01-01 00:00:00" """, Column("hoge",DataType("DATETIME",Nil),List(Default("2014-01-01 00:00:00"))))
   }
 
 }
