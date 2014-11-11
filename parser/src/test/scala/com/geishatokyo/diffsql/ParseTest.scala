@@ -45,16 +45,21 @@ class ParseTest extends FlatSpec with Matchers {
 
   val beforeSQL =
     """
-      |
+      |# Before sql
       |CREATE TABLE User(
       |  id INT AUTO_INCREMENT PRIMARY KEY,
       |  age INT,
-      |  gender Int
+      |  gender Int,
+      |  hoge DAteTime DEFAULT "2011-01-01 11:00:00" NOT NULL,
+      |  fuga DAteTime DEFAULT '2011-01-01' NOT NULL
       |);
+      |-- Alter teble
+      |/* also
+      |block comment */
+      |alter table User add constraint TAccessTokenCPK unique(tokenId,createIndex);
       |
-      |
-      |CREATE TABLE Hoge(
-      |  id INT
+      |CREATE TABLE /*hoge*/ Hoge(
+      |  id INT #This column is ID
       |);
       |
       |

@@ -1,5 +1,7 @@
 package com.geishatokyo.diffsql.parser
 
+import scala.annotation.tailrec
+import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import com.geishatokyo.diffsql.{Name, Definition}
 
@@ -7,6 +9,8 @@ import com.geishatokyo.diffsql.{Name, Definition}
  * Created by takeshita on 14/02/14.
  */
 trait SQLParser extends RegexParsers{
+
+  def skipComment : Boolean = true
 
   // Make literal case insensitive
   implicit override def literal(s: String): Parser[String] = new Parser[String] {
@@ -24,11 +28,73 @@ trait SQLParser extends RegexParsers{
         Success(source.subSequence(start, j).toString, in.drop(j - offset))
       else  {
         val found = if (start == source.length()) "end of source" else "`"+source.charAt(start)+"'"
-        Failure("`"+s+"' is expected but "+found+" is found", in.drop(start - offset))
+        Failure("`"+s+"' is expected but "+ found + " is found", in.drop(start - offset))
       }
     }
   }
 
+
+  override protected def handleWhiteSpace(source: CharSequence, offset: Int): Int = {
+    if(skipComment){
+      val o1 = super.handleWhiteSpace(source,offset)
+      val o2 = handleComment(source,o1)
+      if(o1 != o2) handleWhiteSpace(source,o2)
+      else o2
+    }else{
+      super.handleWhiteSpace(source,offset)
+    }
+  }
+
+
+  def handleComment(source : CharSequence, offset : Int) : Int = {
+    val o1 = handleBlockComment(source,offset)
+    if(o1 != offset) o1
+    else handleInlineComment(source,offset)
+  }
+
+  def handleBlockComment(source : CharSequence,offset : Int) : Int = {
+    if(source.length() - offset < 4) {
+      return offset
+    }
+    val commentStart = source.subSequence(offset,offset + 2)
+    if(commentStart == "/*"){
+      val s = source
+      var i = offset + 2
+      while((i + 1 < s.length) && !(s.charAt(i) == '*' && s.charAt(i + 1) == '/')){
+        i += 1
+      }
+      if(i + 1 < s.length){
+        i + 2
+      }else{
+        offset
+      }
+    }else {
+      offset
+    }
+  }
+  def handleInlineComment(source : CharSequence,offset : Int) : Int = {
+    if(source.length() - offset < 2) {
+      return offset
+    }
+    val commentStart = source.subSequence(offset,offset + 2)
+    if(commentStart == "--" || commentStart.charAt(0) == '#'){
+      val s = source
+      var i = offset + 2
+      while(i < s.length && (s.charAt(i) != '\n')){
+        i += 1
+      }
+      if(i < s.length){
+        i + 1
+      }else{
+        i
+      }
+    }else {
+      offset
+    }
+  }
+
+
+  // Default data structure
 
   def bool : Parser[Boolean] = "true" ^^^ { true } | "false" ^^^ { false }
   def digits : Parser[Int] = """-?\d+""".r ^^ { case v => v.toInt}

@@ -77,7 +77,7 @@ trait KeyParsers { self : SQLParser =>
     def KeyKeywordByAlter = "ADD" ~> constraintSymbol ~ opt("UNIQUE" | "PRIMARY" ~ "KEY") <~ opt("KEY" | "INDEX")
     def KeyBodyByAlter = opt(name) ~ opt(keyAlgorithm) ~ cols ~ opt(order)
 
-    val CreateKeyByAlter = ("ALTER" ~ "TABLE") ~> (CreatePrimaryKeyByAlter | CreateUniqueKeyByAlter | CreateNormalIndexByAlter | CreateForeignKeyByAlter)
+    val CreateKeyByAlter = ("ALTER" ~ "TABLE") ~> (CreatePrimaryKeyByAlter | CreateUniqueKeyByAlter | CreateNormalIndexByAlter | CreateForeignKeyByAlter) <~ opt(";")
 
     def CreatePrimaryKeyByAlter = (name <~ "ADD") ~ (constraintSymbol <~ "PRIMARY" ~ "KEY") ~ opt(keyAlgorithm) ~ cols ^^ {
       case tableName ~ symbol ~ algo ~ columns => {

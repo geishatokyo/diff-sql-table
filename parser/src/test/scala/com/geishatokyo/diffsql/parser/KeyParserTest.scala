@@ -43,7 +43,8 @@ class KeyParserTest extends FlatSpec with Matchers {
   }
 
   "IndexParser" should "parse with symbol" in {
-    assert(StandAloneIndexParser.testParse("ALTER table user add Constraint Symbol unique(name,age)") === CreateKey("user",Key.UniqueKey(Some("Symbol"),List("name","age"),None,None)))
+    assert(StandAloneIndexParser.testParse("ALTER table user add Constraint Symbol unique(name,age);") === CreateKey("user",Key.UniqueKey(Some("Symbol"),List("name","age"),None,None)))
+    assert(StandAloneIndexParser.testParse("alter table TAccessToken add constraint TAccessTokenCPK unique(tokenId,createIndex);") === CreateKey("TAccessToken",Key.UniqueKey(Some("TAccessTokenCPK"),List("tokenId","createIndex"),None,None)))
 
   }
 

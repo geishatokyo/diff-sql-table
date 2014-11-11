@@ -4,6 +4,7 @@ import com.geishatokyo.diffsql.ast.TableOption
 import com.geishatokyo.diffsql.ast.Table
 
 /**
+ *
  * Created by takeshita on 14/02/17.
  */
 trait TableParsers { self : SQLParser with ColumnParsers with DataTypeParsers with KeyParsers =>
