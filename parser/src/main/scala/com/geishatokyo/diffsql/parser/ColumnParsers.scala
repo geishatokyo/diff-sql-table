@@ -31,13 +31,13 @@ trait ColumnParsers { self : SQLParser with DataTypeParsers =>
 
   }
 
-  val columnOption = {
+  def columnOption = {
     import ColumnOptionDef._
 
     Null | NotNull | AutoIncrement | PrimaryKey | UniqueKey | NormalKey | Default | CharacterSet
   }
 
-  val column = name ~ dataType ~ rep(columnOption) ^^ {
+  def column = name ~ dataType ~ rep(columnOption) ^^ {
     case name ~ dataType ~ options => {
       Column(name,dataType,options)
     }

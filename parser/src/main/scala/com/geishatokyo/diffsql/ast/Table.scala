@@ -126,9 +126,7 @@ object Key{
 
   case class FullTextKey(name : Option[Name],columns : List[Name]) extends Key{
     val keyType : KeyType.Value = KeyType.FullText
-
     override def algorithm: Option[KeyAlgorithm.Value] = None
-
     override def order: Option[KeyOrder.Value] = None
   }
 

@@ -4,6 +4,7 @@ import com.geishatokyo.diffsql.diff.{Aggregator, Normalizer, StandardDifferencer
 import com.geishatokyo.diffsql.parser.SQLParser
 import com.geishatokyo.diffsql.mysql.{MySQLDataTypeSynonym, MySQLnizer, MySQLParser}
 import com.geishatokyo.diffsql.ast.{DataType, DataTypeEquality}
+import com.geishatokyo.diffsql.sqlite.{Sqlitenizer, SqliteParser}
 
 /**
  * Created by takeshita on 14/02/17.
@@ -40,6 +41,18 @@ object DiffSQLBuilder{
     var differencer : Differencer = new StandardDifferencer()
     var sqlnizer : SQLnizer = new MySQLnizer()
 
+  }
+
+  object SqliteBuilder extends DiffSQLBuilder{
+
+    implicit object dataTypeEquality extends DataTypeEquality.OnlyName with MySQLDataTypeSynonym
+    var sqlParser : SQLParser = new SqliteParser
+    var aggregator : Aggregator = Aggregator
+    var normalizer : Normalizer = Normalizer.SeparateColumnIndex +
+      Normalizer.AddNotNullAsDefault(DataType("BOOLEAN")) +
+      Normalizer.CompleteKeyName()
+    var differencer : Differencer = new StandardDifferencer()
+    var sqlnizer : SQLnizer = new Sqlitenizer()
   }
 
 }
