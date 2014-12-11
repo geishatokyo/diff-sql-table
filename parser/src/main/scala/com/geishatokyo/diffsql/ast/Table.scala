@@ -132,24 +132,20 @@ object Key{
 
   case class ForeignKey(name : Option[Name],columns : List[Name],reference : Reference) extends Key{
     override def keyType: KeyType.Value = KeyType.ForeignKey
-
     override def algorithm: Option[KeyAlgorithm.Value] = None
-
     override def order: Option[KeyOrder.Value] = None
   }
 
-  case class Reference(table : Name,columns : List[Name],onDelete : Option[ReferenceOption.Value],onUpdate : Option[ReferenceOption.Value])
+  case class Reference(table: Name, columns: List[Name], onDelete: Option[ReferenceOption.Value], onUpdate: Option[ReferenceOption.Value])
 
 }
 
 object KeyType extends Enumeration{
-
   val PrimaryKey = Value
   val Unique = Value
   val Normal = Value
   val FullText = Value
   val ForeignKey = Value
-
 }
 
 object KeyOrder extends Enumeration{
@@ -168,6 +164,13 @@ object ReferenceOption extends Enumeration{
   val Cascade = Value
   val SetNull = Value
   val NoAction = Value
+
+  def toString(ref: ReferenceOption.Value): String = ref match {
+    case Restrict => "RESTRICT"
+    case Cascade => "CASCADE"
+    case SetNull => "SET NULL"
+    case NoAction => "NO ACTIONe"
+  }
 }
 
 

@@ -11,9 +11,7 @@ class DiffSQL(sqlParser : SQLParser,
               normalizer : Normalizer,
               differencer : Differencer,
               sqlnizer : SQLnizer) {
-
   def diff(after : String, before : String) : List[String] = {
-
     val afterDefs = normalizer.normalize(aggregator.aggregate(sqlParser.parseSql(after)))
     val beforeDefs = normalizer.normalize(aggregator.aggregate(sqlParser.parseSql(before)))
 
@@ -40,8 +38,5 @@ class DiffSQL(sqlParser : SQLParser,
         dropTables.map(t => sqlnizer.toDropTable(t))
       }else Nil) :::
     diffs.flatMap(d => sqlnizer.toAlterSQL(d))
-
-
-
   }
 }
