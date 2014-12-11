@@ -24,14 +24,14 @@ trait KeyParsers { self : SQLParser =>
 
     val referenceOption = "RESTRICT" ^^^ {ReferenceOption.Restrict} |
       "CASCADE" ^^^ {ReferenceOption.Cascade}  |
-      "SET" ~ "NULL" ^^^ {ReferenceOption.Restrict}  |
+      "SET" ~ "NULL" ^^^ {ReferenceOption.SetNull}  |
       "NO" ~ "ACTION" ^^^ {ReferenceOption.NoAction}
 
     val referenceDefinition = "REFERENCES" ~> name ~ cols ~ opt(onDelete) ~ opt(onUpdate) ^^ {
       case tableName ~ cols ~ onDelete ~ onUpdate => Reference(tableName,cols,onDelete,onUpdate)
     }
     def onDelete = "ON" ~ "DELETE" ~> referenceOption
-    def onUpdate = "ON" ~ "CREATE" ~> referenceOption
+    def onUpdate = "ON" ~ "UPDATE" ~> referenceOption
   }
 
 
