@@ -15,8 +15,8 @@ case class Name(name: String) {
 
 }
 object Name {
-  implicit def nameToString(name: Name) = name.name
-  implicit def stringToName(string: String) = Name(string)
+  implicit def nameToString(name: Name): String = name.name
+  implicit def stringToName(string: String): Name = Name(string)
 }
 
 trait Definition

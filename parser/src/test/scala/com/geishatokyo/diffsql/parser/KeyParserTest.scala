@@ -53,7 +53,7 @@ class KeyParserTest extends FlatSpec with Matchers {
     assert(IndexInTableParser.testParse("Constraint symbol FOREIGN key ArticleFK (articleId) REFERENCES Article(id) ON DELETE NO ACTION") ===
       Key.ForeignKey(Some("ArticleFK"), List[Name]("articleId"), Reference("Article", List("id"), Some(ReferenceOption.NoAction), None)))
 
-    assert(IndexInTableParser.testParse("CONSTRAINT symbol FOREIGN KEY table1FK (column1) REFERENCES table2(column2) ON DELETE CASCADE ON UPDATE SET NULL") ===
+    assert(IndexInTableParser.testParse("CONSTRAINT symbol FOREIGN KEY table1FK (column1) REFERENCES table2(column2) ON UPDATE SET NULL ON DELETE CASCADE") ===
       Key.ForeignKey(Some("table1FK"), List[Name]("column1"), Reference("table2", List("column2"), Some(ReferenceOption.Cascade), Some(ReferenceOption.SetNull))))
   }
 
