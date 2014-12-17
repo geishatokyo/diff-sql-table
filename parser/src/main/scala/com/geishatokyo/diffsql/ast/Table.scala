@@ -119,6 +119,7 @@ object Key{
   case class UniqueKey(name :  Option[Name], columns : List[Name],order : Option[KeyOrder.Value],algorithm : Option[KeyAlgorithm.Value]) extends Key{
     val keyType: KeyType.Value = KeyType.Unique
   }
+
   case class PrimaryKey(columns : List[Name],order : Option[KeyOrder.Value],algorithm : Option[KeyAlgorithm.Value]) extends Key{
     val name = None
     val keyType: KeyType.Value = KeyType.PrimaryKey
@@ -137,7 +138,6 @@ object Key{
   }
 
   case class Reference(table: Name, columns: List[Name], onDelete: Option[ReferenceOption.Value], onUpdate: Option[ReferenceOption.Value])
-
 }
 
 object KeyType extends Enumeration{
@@ -173,4 +173,11 @@ object ReferenceOption extends Enumeration{
   }
 }
 
+sealed abstract class ReferencialAction {
+  def option: ReferenceOption.Value
+}
 
+object ReferencialAction {
+  case class Update(option: ReferenceOption.Value) extends ReferencialAction
+  case class Delete(option: ReferenceOption.Value) extends ReferencialAction
+}

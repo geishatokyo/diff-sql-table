@@ -1,7 +1,7 @@
 package com.geishatokyo.diffsql.parser
 
 import com.geishatokyo.diffsql.Name
-import com.geishatokyo.diffsql.ast.Key.{ Reference}
+import com.geishatokyo.diffsql.ast.Key.Reference
 import com.geishatokyo.diffsql.ast._
 
 /**
@@ -27,11 +27,22 @@ trait KeyParsers { self : SQLParser =>
       "SET" ~ "NULL" ^^^ {ReferenceOption.SetNull}  |
       "NO" ~ "ACTION" ^^^ {ReferenceOption.NoAction}
 
-    val referenceDefinition = "REFERENCES" ~> name ~ cols ~ opt(onDelete) ~ opt(onUpdate) ^^ {
-      case tableName ~ cols ~ onDelete ~ onUpdate => Reference(tableName,cols,onDelete,onUpdate)
+    val onDelete = "ON" ~ "DELETE" ~> referenceOption ^^ {
+      case refOpt => ReferencialAction.Delete(refOpt)
     }
-    def onDelete = "ON" ~ "DELETE" ~> referenceOption
-    def onUpdate = "ON" ~ "UPDATE" ~> referenceOption
+    val onUpdate = "ON" ~ "UPDATE" ~> referenceOption ^^ {
+      case refOpt => ReferencialAction.Update(refOpt)
+    }
+
+    val option = onDelete | onUpdate
+
+    val referenceDefinition =
+      "REFERENCES" ~> name ~ cols ~ rep(option) ^^ {
+        case tableName ~ cs ~ opts =>
+          val onDelete = opts.collect { case it: ReferencialAction.Delete => it.option }.headOption
+          val onUpdate = opts.collect { case it: ReferencialAction.Update => it.option }.headOption
+          Reference(tableName, cs, onDelete, onUpdate)
+      }
   }
 
 
@@ -62,7 +73,6 @@ trait KeyParsers { self : SQLParser =>
 
   object StandAloneKeyDef {
     import KeyDef._
-
 
     val CreateKeyByCreate = ("CREATE" ~> opt("UNIQUE") <~ "INDEX") ~ name ~ opt(keyAlgorithm) ~ ("ON" ~> name) ~ cols ~ opt(order) <~ opt(";") ^^ {
       case Some(_) ~ indexName ~ algo ~ tableName ~ columns ~ order => {
@@ -99,8 +109,6 @@ trait KeyParsers { self : SQLParser =>
         CreateKey(tableName, Key.ForeignKey(name.orElse(symbol.map(s => Name(s))),columns,ref))
       }
     }
-
-
 
   }
 

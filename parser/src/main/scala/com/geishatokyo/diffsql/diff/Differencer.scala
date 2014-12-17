@@ -31,4 +31,4 @@ trait Differencer {
 
 case class Diff(tableName : String, columns : DiffSet[Column],keys : DiffSet[Key],tableOptions : DiffSet[TableOption])
 
-case class DiffSet[T]( add : List[T],remove : List[T], alter : List[T])
+case class DiffSet[+T]( add : List[T],remove : List[T], alter : List[T])
