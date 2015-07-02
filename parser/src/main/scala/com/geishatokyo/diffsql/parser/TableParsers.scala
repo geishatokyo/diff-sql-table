@@ -43,7 +43,8 @@ trait TableParsers { self : SQLParser with ColumnParsers with DataTypeParsers wi
     "(" ~ repsep(createDefinition,",") ~ ")" ~
     repsep(tableOption,opt(",")) ~ opt(TableDef.Partition) <~ opt(";") ^^ {
     case tableName ~ "(" ~ columnAndIndexes ~ ")" ~ tableOptions ~ partition => {
-      Table(tableName,columnAndIndexes,tableOptions,partition)
+      val ops = if(partition.isDefined) tableOptions :+ partition.get else tableOptions
+      Table(tableName,columnAndIndexes,ops)
     }
   }
 

@@ -16,7 +16,7 @@ class MySQLnizer extends SQLnizer {
       case c : Column => toColumnDefinition(c)
       case k : Key => toIndexDefinition(k)
     }).mkString(",\n  ")}
-)${table.options.mkString(",\n")};"""
+)${table.options.map(optionToSQL(_)).mkString(",\n")};"""
 
   }
 
@@ -27,6 +27,13 @@ class MySQLnizer extends SQLnizer {
 
   def toAlterSQL(diff: Diff): List[String] = {
     columns(diff) ::: keys(diff) ::: partitions(diff)
+  }
+
+  def optionToSQL(tableOp: TableOption) = {
+    tableOp match{
+      case p : Partition => toPartitionBlock(p)
+      case o => o.toString
+    }
   }
 
   def columns(diff : Diff) = {
@@ -73,6 +80,9 @@ class MySQLnizer extends SQLnizer {
   }
 
   def toCreatePartition(table: String,partition: Partition) = {
+    s"ALTER TABLE ${table} ${toPartitionBlock(partition)};"
+  }
+  def toPartitionBlock(partition: Partition) = {
 
     def convertLessThan(lt: LessThanRange) = {
       lt match{
@@ -108,22 +118,22 @@ class MySQLnizer extends SQLnizer {
 
     partition match {
       case KeyPartition(exp,size) => {
-        s"ALTER TABLE ${table} PARTITION BY KEY(${exp}) PARTITIONS ${size};"
+        s"PARTITION BY KEY(${exp}) PARTITIONS ${size}"
       }
       case HashPartition(exp,size) => {
-        s"ALTER TABLE ${table} PARTITION BY HASH(${exp}) PARTITIONS ${size};"
+        s"PARTITION BY HASH(${exp}) PARTITIONS ${size}"
       }
       case RangePartition(exp,ranges) => {
-        s"ALTER TABLE ${table} PARTITION BY RANGE(${exp}) (${ranges.map(convertLessThan(_)).mkString(",\n")});"
+        s"PARTITION BY RANGE(${exp}) (${ranges.map(convertLessThan(_)).mkString(",\n")})"
       }
       case ColumnsPartition(cols,ranges) => {
-        s"ALTER TABLE ${table} PARTITION BY RANGE COLUMNS(${cols.map(_.toString).mkString(",")}) (${ranges.map(convertLessThan(_)).mkString(",\n")});"
+        s"PARTITION BY RANGE COLUMNS(${cols.map(_.toString).mkString(",")}) (${ranges.map(convertLessThan(_)).mkString(",\n")})"
       }
       case ListPartition(exp,ranges) => {
-        s"ALTER TABLE ${table} PARTITION BY LIST(${exp}) (${ranges.map(converList(_)).mkString(",\n")});"
+        s"PARTITION BY LIST(${exp}) (${ranges.map(converList(_)).mkString(",\n")})"
       }
       case ListColumnsPartition(cols,ranges) => {
-        s"ALTER TABLE ${table} PARTITION BY LIST COLUMNS(${cols.map(_.toString).mkString(",")}) (${ranges.map(converList(_)).mkString(",\n")});"
+        s"PARTITION BY LIST COLUMNS(${cols.map(_.toString).mkString(",")}) (${ranges.map(converList(_)).mkString(",\n")})"
       }
       case _ => {
         ""

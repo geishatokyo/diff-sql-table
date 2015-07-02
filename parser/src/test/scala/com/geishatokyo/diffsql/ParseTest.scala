@@ -41,6 +41,11 @@ class ParseTest extends FlatSpec with Matchers {
       |  aaa Int
       |);
       |
+      |ALTER TABLE UserDesc partition by RANGE COLUMNS(id) (
+      |  PARTITION p3 VALUES LESS THAN (200),
+      |  PARTITION p4 VALUES LESS THAN (300)
+      |);
+      |
     """.stripMargin
 
   val beforeSQL =

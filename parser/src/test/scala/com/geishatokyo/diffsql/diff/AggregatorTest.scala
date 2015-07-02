@@ -16,8 +16,9 @@ class AggregatorTest extends FlatSpec with Matchers {
   "Aggregater" should "aggregate index" in {
 
     val defs = List(
-      Table("User",List(Column("id",DataType("Long",Nil),Nil)),Nil,None),
-      CreateKey("User",Key.NormalKey(Some("hoge"),List("id"),None,None))
+      Table("User",List(Column("id",DataType("Long",Nil),Nil)),Nil),
+      CreateKey("User",Key.NormalKey(Some("hoge"),List("id"),None,None)),
+      CreatePartition("User",HashPartition("id",4))
     )
 
     val tables = Aggregator.aggregate(defs)
@@ -25,7 +26,7 @@ class AggregatorTest extends FlatSpec with Matchers {
     assert(tables === List(Table("User",List(
       Column("id",DataType("Long",Nil),Nil),
       Key.NormalKey(Some("hoge"),List("id"),None,None)
-    ),Nil,None)))
+    ),List(HashPartition("id",4)))))
 
   }
 

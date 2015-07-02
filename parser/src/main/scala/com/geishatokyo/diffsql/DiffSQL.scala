@@ -14,7 +14,6 @@ class DiffSQL(sqlParser : SQLParser,
   def diff(after : String, before : String) : List[String] = {
     val afterDefs = normalizer.normalize(aggregator.aggregate(sqlParser.parseSql(after)))
     val beforeDefs = normalizer.normalize(aggregator.aggregate(sqlParser.parseSql(before)))
-
     val createTables = afterDefs.filter(t => {
       !beforeDefs.exists(_.name == t.name)
     })

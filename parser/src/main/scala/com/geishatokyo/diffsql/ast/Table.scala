@@ -6,7 +6,7 @@ import com.geishatokyo.diffsql.diff.{Diff, Differencer}
 /**
  * Created by takeshita on 14/02/14.
  */
-case class Table(name : Name, fields : List[TableField],options : List[TableOption] = Nil,partition: Option[Partition] = None) extends Definition {
+case class Table(name : Name, fields : List[TableField],options : List[TableOption] = Nil) extends Definition {
 
   def +( column : Column) = {
     copy(fields = fields :+ column)
@@ -18,9 +18,6 @@ case class Table(name : Name, fields : List[TableField],options : List[TableOpti
     copy(fields = fields :+ key)
   }
 
-  def +( partition: Partition) = {
-    copy(partition = Some(partition))
-  }
 
   def ++( fields : List[TableField]) = {
     copy(fields = this.fields ++ fields)

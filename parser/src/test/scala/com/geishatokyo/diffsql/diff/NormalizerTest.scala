@@ -21,7 +21,7 @@ class NormalizerTest extends FlatSpec with Matchers {
       Table("User",List(
         Column("id",DataType("Long",Nil),List(ColumnOption.PrimaryKey)),
         Column("name",DataType("VARCHAR",List(120)),List(ColumnOption.UniqueKey))
-      ),Nil,None)
+      ),Nil)
     )
 
     val tables = Normalizer.SeparateColumnIndex.normalize(defs)
@@ -32,7 +32,7 @@ class NormalizerTest extends FlatSpec with Matchers {
         Column("name",DataType("VARCHAR",List(120)),Nil),
         Key.PrimaryKey(List("id"),None,None),
         Key.UniqueKey(None,List("name"),None,None)
-      ),Nil,None)))
+      ),Nil)))
 
 
   }
@@ -47,7 +47,7 @@ class NormalizerTest extends FlatSpec with Matchers {
         Column("withoutNotNull",DataType("BOOLEAN"),List()),
         Column("withNotNull",DataType("BOOLEAN"),List(ColumnOption.NotNull)),
         Column("withNull",DataType("BOOLEAN"),List(ColumnOption.Null))
-      ),Nil,None)
+      ),Nil)
     )
 
     val tables = Normalizer.AddNotNullAsDefault("Boolean").normalize(defs)
@@ -58,7 +58,7 @@ class NormalizerTest extends FlatSpec with Matchers {
         Column("withoutNotNull",DataType("BOOLEAN"),List(ColumnOption.NotNull)),
         Column("withNotNull",DataType("BOOLEAN"),List(ColumnOption.NotNull)),
         Column("withNull",DataType("BOOLEAN"),List(ColumnOption.Null))
-      ),Nil,None)
+      ),Nil)
     ))
 
 
