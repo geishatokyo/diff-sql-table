@@ -57,7 +57,7 @@ trait SQLParser extends RegexParsers with SkippingParsers{
       return offset
     }
     val commentStart = source.subSequence(offset,offset + 2)
-    if(commentStart == "/*"){
+    if(commentStart == "/*" && source.length > offset + 3 && source.subSequence(offset,offset + 3) != "/*!"){
       val s = source
       var i = offset + 2
       while((i + 1 < s.length) && !(s.charAt(i) == '*' && s.charAt(i + 1) == '/')){

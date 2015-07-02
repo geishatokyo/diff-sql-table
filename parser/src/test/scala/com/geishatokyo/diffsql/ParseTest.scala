@@ -32,7 +32,9 @@ class ParseTest extends FlatSpec with Matchers {
       |  id INT AUTO_INCREMENT PRIMARY KEY,
       |  name VARCHAR(100),
       |  gender Int
-      |);
+      |) /*!50500 partition by RANGE COLUMNS(id) (
+      |  PARTITION p3 VALUES LESS THAN (200),
+      |  PARTITION p5 VALUES LESS THAN (300) )*/;
       |
       |CREATE INDEX a on user (name,gender);
       |
@@ -65,7 +67,8 @@ class ParseTest extends FlatSpec with Matchers {
       |
       |CREATE TABLE /*hoge*/ Hoge(
       |  id INT #This column is ID
-      |);
+      |)
+      |;
       |
       |
     """.stripMargin
