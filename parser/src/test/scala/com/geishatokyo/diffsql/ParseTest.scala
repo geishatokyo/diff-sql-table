@@ -33,8 +33,8 @@ class ParseTest extends FlatSpec with Matchers {
       |  name VARCHAR(100),
       |  gender Int
       |) /*!50500 partition by RANGE COLUMNS(id) (
-      |  PARTITION p3 VALUES LESS THAN (200),
-      |  PARTITION p5 VALUES LESS THAN (300) )*/;
+      |  PARTITION p3 VALUES LESS THAN (200) ENGINE = InnoDB,
+      |  PARTITION p5 VALUES LESS THAN MAXVALUE )*/;
       |
       |CREATE INDEX a on user (name,gender);
       |
@@ -44,7 +44,7 @@ class ParseTest extends FlatSpec with Matchers {
       |);
       |
       |ALTER TABLE UserDesc partition by RANGE COLUMNS(id) (
-      |  PARTITION p3 VALUES LESS THAN (200),
+      |  PARTITION p3 VALUES LESS THAN (200) ENGINE = InnoDB,
       |  PARTITION p4 VALUES LESS THAN (300)
       |);
       |
@@ -59,7 +59,9 @@ class ParseTest extends FlatSpec with Matchers {
       |  gender Int,
       |  hoge DAteTime DEFAULT "2011-01-01 11:00:00" NOT NULL,
       |  fuga DAteTime DEFAULT '2011-01-01' NOT NULL
-      |);
+      |) partition by RANGE COLUMNS(id) (
+      |  PARTITION p3 VALUES LESS THAN (200),
+      |  PARTITION p5 VALUES LESS THAN (MAXVALUE) );
       |-- Alter teble
       |/* also
       |block comment */

@@ -22,8 +22,30 @@ case class ListColumnsPartition(columns: List[Name],ranges: List[ListRange]) ext
 case class HashPartition(expression: String,partitions: Int) extends Partition
 case class KeyPartition(expression: String,partitions: Int) extends Partition
 
-case class ListRange(name: Name,value: String,options: List[RangeOption])
-case class LessThanRange(name: Name,value: String,options: List[RangeOption])
+case class ListRange(name: Name,value: String,options: List[RangeOption]){
+  override def equals(obj: scala.Any): Boolean = {
+    obj match{
+      case LessThanRange(name,_,_) => {
+        name == this.name
+      }
+      case _ => {
+        false
+      }
+    }
+  }
+}
+case class LessThanRange(name: Name,value: String,options: List[RangeOption]) {
+  override def equals(obj: scala.Any): Boolean = {
+    obj match{
+      case LessThanRange(name,_,_) => {
+        name == this.name
+      }
+      case _ => {
+        false
+      }
+    }
+  }
+}
 
 class LessThanMaxValue(name: Name,options: List[RangeOption]) extends LessThanRange(name,"MAXVALUE",options)
 
