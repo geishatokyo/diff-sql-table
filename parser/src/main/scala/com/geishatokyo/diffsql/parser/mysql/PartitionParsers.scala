@@ -8,7 +8,7 @@ import com.geishatokyo.diffsql.parser.SQLParser
  */
 trait PartitionParsers { self: SQLParser =>
 
-  def CreatePatitionByAlter = "ALTER" ~ "TABLE" ~> name ~ partition ^^ {
+  def CreatePatitionByAlter = "ALTER" ~ "TABLE" ~> name ~ partition <~ opt(";") ^^ {
     case table ~ partition => CreatePartition(table,partition)
   }
 
