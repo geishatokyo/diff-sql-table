@@ -3,11 +3,12 @@ package com.geishatokyo.diffsql.sqlite
 import com.geishatokyo.diffsql.ast.ColumnOption
 import com.geishatokyo.diffsql.ast.ColumnOption.SimpleCO
 import com.geishatokyo.diffsql.parser._
+import com.geishatokyo.diffsql.parser.mysql.PartitionParsers
 
 /**
  * Created by takezoux2 on 14/12/09.
  */
-class SqliteParser extends SQLParser with TableParsers with ColumnParsers with KeyParsers with DataTypeParsers {
+class SqliteParser extends SQLParser with TableParsers with ColumnParsers with KeyParsers with DataTypeParsers with PartitionParsers {
 
 
   object sqlite{

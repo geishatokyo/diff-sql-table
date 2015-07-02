@@ -26,7 +26,7 @@ class MySQLnizer extends SQLnizer {
 
 
   def toAlterSQL(diff: Diff): List[String] = {
-    columns(diff) ::: keys(diff)
+    columns(diff) ::: keys(diff) ::: partitions(diff)
   }
 
   def columns(diff : Diff) = {
@@ -59,6 +59,77 @@ class MySQLnizer extends SQLnizer {
     }
   }
 
+  def partitions(diff: Diff) = {
+
+    diff.tableOptions.add.collectFirst({
+      case p : Partition => p
+    }).map(o => {
+      toCreatePartition(diff.tableName,o)
+    }) orElse diff.tableOptions.alter.collectFirst({
+      case p : Partition => p
+    }).map(o => {
+      toCreatePartition(diff.tableName,o)
+    }) map(List(_)) getOrElse Nil
+  }
+
+  def toCreatePartition(table: String,partition: Partition) = {
+
+    def convertLessThan(lt: LessThanRange) = {
+      lt match{
+        case maxValue : LessThanMaxValue => {
+          s"PARTITION ${lt.name} VALUES LESS THAN MAXVALUE ${convertOptions(lt.options)}"
+        }
+        case lt => {
+          s"PARTITION ${lt.name} VALUES LESS THAN (${lt.value}) ${convertOptions(lt.options)}"
+        }
+      }
+    }
+
+    def converList(lt: ListRange) = {
+      s"PARTITION ${lt.name} VALUES IN (${lt.value}) ${convertOptions(lt.options)}"
+    }
+
+    def convertOptions(ops: List[RangeOption]) = {
+      ops.map(convertOption(_)).mkString(",")
+    }
+
+    def convertOption(op: RangeOption) = {
+      op match{
+        case RangeOption.Comment(c) => s"COMMENT = '${c}'"
+        case RangeOption.Engine(e) => s"ENGINE = '${e}'"
+        case RangeOption.DataDirectory(dir) => s"DATA DIRECTORY = '${dir}'"
+        case RangeOption.IndexDirectory(dir) => s"INDEX DIRECTORY = '${dir}'"
+        case RangeOption.MaxRows(size) => s"MAX_ROWS = ${size}"
+        case RangeOption.MinRows(size) => s"MIN_ROWS = ${size}"
+        case RangeOption.TableSpace(name) => s"TABLESPACE = ${name}"
+        case RangeOption.NodeGroup(g) => s"NODEGROUP = ${g}"
+      }
+    }
+
+    partition match {
+      case KeyPartition(exp,size) => {
+        s"ALTER TABLE ${table} PARTITION BY KEY(${exp}) PARTITIONS ${size};"
+      }
+      case HashPartition(exp,size) => {
+        s"ALTER TABLE ${table} PARTITION BY HASH(${exp}) PARTITIONS ${size};"
+      }
+      case RangePartition(exp,ranges) => {
+        s"ALTER TABLE ${table} PARTITION BY RANGE(${exp}) (${ranges.map(convertLessThan(_)).mkString(",\n")});"
+      }
+      case ColumnsPartition(cols,ranges) => {
+        s"ALTER TABLE ${table} PARTITION BY RANGE COLUMNS(${cols.map(_.toString).mkString(",")}) (${ranges.map(convertLessThan(_)).mkString(",\n")});"
+      }
+      case ListPartition(exp,ranges) => {
+        s"ALTER TABLE ${table} PARTITION BY LIST(${exp}) (${ranges.map(converList(_)).mkString(",\n")});"
+      }
+      case ListColumnsPartition(cols,ranges) => {
+        s"ALTER TABLE ${table} PARTITION BY LIST COLUMNS(${cols.map(_.toString).mkString(",")}) (${ranges.map(converList(_)).mkString(",\n")});"
+      }
+      case _ => {
+        ""
+      }
+    }
+  }
 
   def toIndexDefinition(key : Key) = {
     val prefix = key match {

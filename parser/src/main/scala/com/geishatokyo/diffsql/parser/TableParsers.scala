@@ -2,12 +2,13 @@ package com.geishatokyo.diffsql.parser
 
 import com.geishatokyo.diffsql.ast.TableOption
 import com.geishatokyo.diffsql.ast.Table
+import com.geishatokyo.diffsql.parser.mysql.PartitionParsers
 
 /**
  *
  * Created by takeshita on 14/02/17.
  */
-trait TableParsers { self : SQLParser with ColumnParsers with DataTypeParsers with KeyParsers =>
+trait TableParsers { self : SQLParser with ColumnParsers with DataTypeParsers with KeyParsers with PartitionParsers =>
 
 
   object TableDef{
@@ -25,7 +26,7 @@ trait TableParsers { self : SQLParser with ColumnParsers with DataTypeParsers wi
       case charset => TableOption.Charset(charset)
     }
 
-
+    def Partition = partition | CommentOutedPartition
 
   }
 
@@ -40,9 +41,9 @@ trait TableParsers { self : SQLParser with ColumnParsers with DataTypeParsers wi
 
   def createTable = "CREATE" ~ "TABLE" ~ opt("IF" ~ "NOT" ~ "EXISTS") ~> name ~
     "(" ~ repsep(createDefinition,",") ~ ")" ~
-    repsep(tableOption,opt(",")) <~ opt(";") ^^ {
-    case tableName ~ "(" ~ columnAndIndexes ~ ")" ~ tableOptions => {
-      Table(tableName,columnAndIndexes,tableOptions)
+    repsep(tableOption,opt(",")) ~ opt(TableDef.Partition) <~ opt(";") ^^ {
+    case tableName ~ "(" ~ columnAndIndexes ~ ")" ~ tableOptions ~ partition => {
+      Table(tableName,columnAndIndexes,tableOptions,partition)
     }
   }
 

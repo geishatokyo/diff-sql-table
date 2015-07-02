@@ -17,4 +17,12 @@ trait SQLParserForTest[T] extends SQLParser{
 
     }
   }
+
+  def checkParse(sql : String) : Either[String,T] = {
+    parse[T](rootParser,sql) match{
+      case Success(r , _) => Right(r)
+      case NoSuccess(m,_) => Left(m)
+    }
+
+  }
 }

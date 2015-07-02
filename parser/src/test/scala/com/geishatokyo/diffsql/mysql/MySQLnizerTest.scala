@@ -22,7 +22,7 @@ class MySQLnizerTest extends FlatSpec with Matchers  {
       Key.UniqueKey(Some("uk"),List(Name("hoge")),None,None),
       Key.FullTextKey(None,List(Name("hoge"))),
       foreignKey
-    ))
+    ),Nil,None)
 
     val sql = sqlnizer.toCreateTable(table)
 

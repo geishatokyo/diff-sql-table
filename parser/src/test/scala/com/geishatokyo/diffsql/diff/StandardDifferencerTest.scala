@@ -16,8 +16,8 @@ class StandardDifferencerTest extends FlatSpec with Matchers {
 
     implicit val eq = DataTypeEquality.OnlyName
 
-    val table1 = Table("User",List(Column("id",DataType("BIGINT"),List(ColumnOption.PrimaryKey)),Column("name",DataType("INT"))))
-    val table2 = Table("user",List(Column("id",DataType("BigInt")),Column("gender",DataType("INT"))))
+    val table1 = Table("User",List(Column("id",DataType("BIGINT"),List(ColumnOption.PrimaryKey)),Column("name",DataType("INT"))),Nil,None)
+    val table2 = Table("user",List(Column("id",DataType("BigInt")),Column("gender",DataType("INT"))),Nil,None)
 
     implicit val differencer  = new StandardDifferencer()
 

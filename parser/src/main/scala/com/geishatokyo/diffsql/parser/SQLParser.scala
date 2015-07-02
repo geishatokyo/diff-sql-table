@@ -8,7 +8,7 @@ import com.geishatokyo.diffsql.{Name, Definition}
 /**
  * Created by takeshita on 14/02/14.
  */
-trait SQLParser extends RegexParsers{
+trait SQLParser extends RegexParsers with SkippingParsers{
 
   def skipComment : Boolean = true
 
@@ -110,6 +110,20 @@ trait SQLParser extends RegexParsers{
   }
 
   def stringLiteral = ("'" ~> """[^']*""".r <~ "'") | ("\"" ~> """[^"]*""".r <~ "\"")
+
+  def allValueAsString =  (bool ^^ {
+      case b => b.toString
+    }) | ("""-?\d+\.\d+""".r) | (digits ^^ {
+    case i => i.toString
+  }) | stringLiteral | value
+
+  def functionAsString : Parser[String] = """[a-zA-Z_0-9]+""".r ~ "(" ~ repsep(
+    functionAsString | allValueAsString,",") ~ ")" ^^ {
+    case a ~ b ~ args ~ d => {
+      a + b + args.mkString(",") + d
+    }
+  }
+
 
   def createDefs : Parser[List[Definition]]
 

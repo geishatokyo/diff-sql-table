@@ -13,7 +13,7 @@ trait Differencer {
 
   def diff(after: Table, before: Table) : Diff = {
     if(after.name != before.name){
-      throw new Exception("Can't diff difference tables")
+      throw new Exception("Can't diff different tables")
     }
 
     Diff(after.name,
