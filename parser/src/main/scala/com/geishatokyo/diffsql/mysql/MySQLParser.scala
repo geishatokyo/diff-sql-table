@@ -8,6 +8,6 @@ import com.geishatokyo.diffsql.parser.mysql.PartitionParsers
  */
 
 class MySQLParser extends SQLParser with TableParsers with ColumnParsers with KeyParsers with DataTypeParsers with PartitionParsers {
-  def createDefs = rep( createTable | createIndex)
+  def createDefs = rep( createTable | createIndex | CreatePatitionByAlter)
 }
 

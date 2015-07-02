@@ -1,12 +1,12 @@
 package com.geishatokyo.diffsql.ast
 
-import com.geishatokyo.diffsql.Name
+import com.geishatokyo.diffsql.{Definition, Name}
 
 /**
  * Created by takezoux2 on 15/07/02.
  */
 
-case class CreatePartition(table: Name,partition: Partition)
+case class CreatePartition(table: Name,partition: Partition) extends Definition
 
 
 trait Partition extends TableOption{
