@@ -4,6 +4,7 @@ import scala.annotation.tailrec
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import com.geishatokyo.diffsql.{Name, Definition}
+import scala.language.implicitConversions
 
 /**
  * Created by takeshita on 14/02/14.

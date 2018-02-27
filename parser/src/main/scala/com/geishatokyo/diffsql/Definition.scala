@@ -1,5 +1,7 @@
 package com.geishatokyo.diffsql
 
+import scala.language.implicitConversions
+
 /**
  * Created by takeshita on 14/02/17.
  */
@@ -10,7 +12,7 @@ case class Name(name: String) {
     case str : String => name.equalsIgnoreCase(str)
     case _ => false
   }
-  override def hashCode = name.toLowerCase##
+  override def hashCode = name.toLowerCase.hashCode
   override def toString = name
 
 }

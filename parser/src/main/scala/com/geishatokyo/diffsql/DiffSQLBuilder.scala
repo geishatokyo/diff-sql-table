@@ -26,7 +26,10 @@ trait DiffSQLBuilder {
 
 object DiffSQLBuilder{
 
-  object MySQLBuilder extends DiffSQLBuilder{
+  def createMySQLBuilder() = new MySQLBuilder()
+  def createSqliteBuilder() = new SqliteBuilder()
+
+  class MySQLBuilder extends DiffSQLBuilder{
 
     implicit object dataTypeEquality extends DataTypeEquality.OnlyName with MySQLDataTypeSynonym
     var sqlParser : SQLParser = new MySQLParser
@@ -43,7 +46,7 @@ object DiffSQLBuilder{
 
   }
 
-  object SqliteBuilder extends DiffSQLBuilder{
+  class SqliteBuilder extends DiffSQLBuilder{
 
     implicit object dataTypeEquality extends DataTypeEquality.OnlyName with MySQLDataTypeSynonym
     var sqlParser : SQLParser = new SqliteParser

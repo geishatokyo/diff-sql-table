@@ -75,7 +75,7 @@ object Normalizer{
 
   /**
    * MySQLのSHOW CREATE TABLEで帰ってくるKey情報は、
-   * 作成時に無名のIndexにしていた場合、最初の絡むの名前がつけられるため、
+   * 作成時に無名のIndexにしていた場合、最初のカラムの名前がつけられるため、
    * その差分を吸収するため無名のIndexの名前を補完する
    */
   case class CompleteKeyName() extends Normalizer{

@@ -2,6 +2,8 @@ package com.geishatokyo.diffsql.ast
 
 import com.geishatokyo.diffsql.Name
 
+import scala.language.implicitConversions
+
 /**
  * Created by takeshita on 14/02/14.
  */
